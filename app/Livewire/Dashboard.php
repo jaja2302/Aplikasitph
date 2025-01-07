@@ -7,6 +7,8 @@ use App\Models\Regional;
 use App\Models\Wilayah;
 use App\Models\Estate;
 use App\Models\Afdeling;
+use App\Models\EstatePlot;
+use App\Models\Blok;
 
 class Dashboard extends Component
 {
@@ -20,6 +22,8 @@ class Dashboard extends Component
     public $selectedWilayah = '';
     public $selectedEstate = '';
     public $selectedAfdeling = '';
+    public $plotMap = [];
+    public $plotType = '';
 
     public function mount()
     {
@@ -50,6 +54,99 @@ class Dashboard extends Component
         $this->afdeling = $value ? Afdeling::where('estate', $value)->get() : [];
         $this->selectedAfdeling = '';
     }
+
+
+    public function updatedPlotType()
+    {
+        if ($this->plotType === 'estate') {
+            $this->generateMapPlotEstate();
+        } else if ($this->plotType === 'blok') {
+            $this->generateMapPlotBlok();
+        }
+    }
+
+    public function updatedSelectedAfdeling()
+    {
+        // Reset plot type when afdeling changes
+        $this->plotType = '';
+    }
+
+
+    public function generateMapPlotEstate()
+    {
+        $est = Estate::where('id', $this->selectedEstate)->first()->est;
+        $plots = EstatePlot::where('est', $est)->get()->toArray();
+
+        // Convert to GeoJSON format
+        $geojson = [
+            'type' => 'FeatureCollection',
+            'features' => [
+                [
+                    'type' => 'Feature',
+                    'geometry' => [
+                        'type' => 'Polygon',
+                        'coordinates' => [
+                            // Mengumpulkan semua koordinat menjadi satu array untuk membentuk polygon
+                            array_map(function ($plot) {
+                                return [$plot['lon'], $plot['lat']];
+                            }, $plots)
+                        ]
+                    ],
+                    'properties' => [
+                        'estate' => $est
+                    ]
+                ]
+            ]
+        ];
+
+        // dd($geojson);
+        $this->plotMap = $geojson;
+    }
+
+    public function generateMapPlotBlok()
+    {
+        $est = Estate::where('id', $this->selectedEstate)->first()->est;
+        $bloks = Blok::where('afdeling', $this->selectedAfdeling)->get()->toArray();
+
+        // Mengelompokkan data berdasarkan nama blok
+        $groupedBloks = collect($bloks)->groupBy('nama')->toArray();
+
+        $geojson = [
+            'type' => 'FeatureCollection',
+            'features' => []
+        ];
+
+        foreach ($groupedBloks as $nama => $blokGroup) {
+            // Mengambil data properti dari item pertama dalam grup
+            $firstBlok = $blokGroup[0];
+
+            $feature = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Polygon',
+                    'coordinates' => [
+                        // Mengumpulkan semua koordinat dalam satu blok
+                        array_map(function ($blok) {
+                            return [$blok['lon'], $blok['lat']];
+                        }, $blokGroup)
+                    ]
+                ],
+                'properties' => [
+                    'id' => $firstBlok['id'],
+                    'nama' => $nama,
+                    'luas' => $firstBlok['luas'],
+                    'sph' => $firstBlok['sph'],
+                    'bjr' => $firstBlok['bjr'],
+                    'afdeling' => $firstBlok['afdeling']
+                ]
+            ];
+
+            $geojson['features'][] = $feature;
+        }
+        // dd($geojson);
+        $this->plotMap = $geojson;
+    }
+
 
     public function render()
     {
