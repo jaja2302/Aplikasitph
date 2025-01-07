@@ -83,22 +83,54 @@
 <script>
     document.addEventListener('livewire:initialized', () => {
         const map = L.map('map').setView([-2.2653013566283, 111.65335780362], 13);
+        let tphLayer = null;
+        let plotLayer = null;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        @this.watch('plotMap', (value) => {
-            // Clear existing layers
-            map.eachLayer((layer) => {
-                if (!(layer instanceof L.TileLayer)) {
-                    map.removeLayer(layer);
-                }
-            });
+        function updateTPHMarkers(value) {
+            if (tphLayer) {
+                map.removeLayer(tphLayer);
+                tphLayer = null;
+            }
+
+            if (value && Array.isArray(value.features) && value.features.length > 0) {
+                tphLayer = L.geoJSON(value, {
+                    pointToLayer: function(feature, latlng) {
+                        return L.circleMarker(latlng, {
+                            radius: 8,
+                            fillColor: "#ff0000",
+                            color: "#000",
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    },
+                    onEachFeature: function(feature, layer) {
+                        const popupContent = `
+                            <strong>TPH Info</strong><br>
+                            Blok: ${feature.properties.blok}<br>
+                            Ancak: ${feature.properties.ancak}<br>
+                            TPH: ${feature.properties.tph}<br>
+                            User: ${feature.properties.user_input}<br>
+                            Datetime: ${feature.properties.datetime}
+                        `;
+                        layer.bindPopup(popupContent);
+                    }
+                }).addTo(map);
+            }
+        }
+
+        function updatePlotLayer(value) {
+            if (plotLayer) {
+                map.removeLayer(plotLayer);
+                plotLayer = null;
+            }
 
             if (value && value.features) {
-                // Add GeoJSON to map with custom styling
-                L.geoJSON(value, {
+                plotLayer = L.geoJSON(value, {
                     style: function(feature) {
                         return {
                             fillColor: feature.properties.estate ? '#ff7800' : '#3388ff',
@@ -112,13 +144,11 @@
                     onEachFeature: function(feature, layer) {
                         let popupContent = '';
                         if (feature.properties.estate) {
-                            // Estate plot popup
                             popupContent = `
                                 <strong>ID: ${feature.properties.id}</strong><br>
                                 Estate: ${feature.properties.estate}
                             `;
                         } else {
-                            // Blok plot popup
                             popupContent = `
                                 <strong>Blok: ${feature.properties.nama}</strong><br>
                                 Luas: ${feature.properties.luas || 'N/A'}<br>
@@ -129,7 +159,6 @@
                         }
                         layer.bindPopup(popupContent);
 
-                        // Highlight on hover
                         layer.on({
                             mouseover: function(e) {
                                 var layer = e.target;
@@ -153,10 +182,20 @@
                     }
                 }).addTo(map);
 
-                // Fit bounds to show all polygons
                 const bounds = L.geoJSON(value).getBounds();
                 map.fitBounds(bounds);
             }
+        }
+
+        @this.watch('plotMap', value => {
+            updatePlotLayer(value);
+            if (@this.coordinatesTPH) {
+                updateTPHMarkers(@this.coordinatesTPH);
+            }
+        });
+
+        @this.watch('coordinatesTPH', value => {
+            updateTPHMarkers(value);
         });
     });
 </script>
