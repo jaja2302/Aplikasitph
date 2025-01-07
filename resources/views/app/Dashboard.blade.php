@@ -1,3 +1,3 @@
 <x-layouts.app>
-    <h1>Dashboard</h1>
+    @livewire('dashboard')
 </x-layouts.app>
