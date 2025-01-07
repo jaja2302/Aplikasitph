@@ -57,12 +57,7 @@
 
 <body class="h-full font-sans antialiased">
     <!-- Page Loader -->
-    <div class="loader fixed inset-0 z-[9999] flex items-center justify-center bg-gray-900">
-        <div class="text-center">
-            <div class="loader-spin inline-block w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full"></div>
-            <h2 class="mt-4 text-xl font-semibold text-white">Loading...</h2>
-        </div>
-    </div>
+    <x-loader text="Mohon Tunggu..." size="w-20 h-20" />
 
     <!-- Flash Messages -->
     @if (session()->has('message'))
@@ -82,10 +77,6 @@
         {{ $slot }}
     </div>
 
-    <!-- Loading Indicator -->
-    <div wire:loading class="fixed top-0 left-0 right-0">
-        <div class="h-1 bg-blue-500 animate-pulse"></div>
-    </div>
 </body>
 
 </html>

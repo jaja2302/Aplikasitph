@@ -68,10 +68,14 @@
     <!-- Main Content -->
     <div class="container mx-auto p-4">
         <div class="bg-white rounded-lg shadow-md">
-            <!-- Map Container -->
+            @if($isLoading)
+            <x-loader text="Memuat peta..." size="w-20 h-20" />
+
+            @endif
             <div id="map" wire:ignore class="h-[600px] w-full rounded-lg"></div>
         </div>
     </div>
+
 </div>
 
 @push('styles')

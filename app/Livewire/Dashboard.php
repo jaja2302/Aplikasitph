@@ -26,6 +26,7 @@ class Dashboard extends Component
     public $plotMap = [];
     public $plotType = '';
     public $coordinatesTPH = ['type' => 'FeatureCollection', 'features' => []];
+    public $isLoading = false;
 
     public function mount()
     {
@@ -94,6 +95,8 @@ class Dashboard extends Component
 
     private function updateMaps()
     {
+        $this->isLoading = true;
+
         // Update plot map based on type
         if ($this->plotType === 'estate') {
             $this->generateMapPlotEstate();
@@ -105,6 +108,8 @@ class Dashboard extends Component
         if ($this->selectedAfdeling) {
             $this->updateTPHCoordinates();
         }
+
+        $this->isLoading = false;
     }
 
     private function updateTPHCoordinates()
