@@ -74,20 +74,84 @@
 
 </div>
 
-@push('styles')
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-@endpush
-
 @push('scripts')
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
+<script type="module">
     document.addEventListener('livewire:initialized', () => {
         const map = L.map('map').setView([-2.2653013566283, 111.65335780362], 13);
         let tphLayer = null;
         let plotLayer = null;
+        let currentFillOpacity = 0.7; // Default opacity
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Custom Control untuk Opacity
+        L.Control.OpacitySlider = L.Control.extend({
+            onAdd: function(map) {
+                const container = L.DomUtil.create('div', 'leaflet-control opacity-control');
+                container.style.backgroundColor = 'white';
+                container.style.padding = '10px';
+                container.style.borderRadius = '5px';
+                container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+
+                const label = L.DomUtil.create('div', '', container);
+                label.innerHTML = 'Opacity: <span id="opacity-value">70%</span>';
+
+                const slider = L.DomUtil.create('input', '', container);
+                slider.type = 'range';
+                slider.min = '0';
+                slider.max = '100';
+                slider.value = '70';
+                slider.style.width = '150px';
+                slider.style.marginTop = '5px';
+
+                L.DomEvent.on(slider, 'input', function(e) {
+                    const value = e.target.value;
+                    document.getElementById('opacity-value').innerHTML = value + '%';
+                    currentFillOpacity = value / 100;
+
+                    if (plotLayer) {
+                        plotLayer.eachLayer(function(layer) {
+                            layer.setStyle({
+                                fillOpacity: currentFillOpacity
+                            });
+                        });
+                    }
+                });
+
+                // Prevent map drag when using the slider
+                L.DomEvent.disableClickPropagation(container);
+
+                return container;
+            }
+        });
+
+        // Add the custom control
+        new L.Control.OpacitySlider({
+            position: 'topright'
+        }).addTo(map);
+
+        // Base layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
+        });
+
+        // Google Satellite layer
+        const satelliteLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+            attribution: '© Google'
+        });
+
+        // Layer control
+        const baseLayers = {
+            "OpenStreetMap": osmLayer,
+            "Satellite": satelliteLayer
+        };
+
+        // Add default layer
+        satelliteLayer.addTo(map);
+
+        // Add layer control to map
+        L.control.layers(baseLayers, null, {
+            position: 'topright'
         }).addTo(map);
 
         function updateTPHMarkers(value) {
@@ -97,7 +161,15 @@
             }
 
             if (value && Array.isArray(value.features) && value.features.length > 0) {
-                tphLayer = L.geoJSON(value, {
+                tphLayer = L.markerClusterGroup({
+                    chunkedLoading: true,
+                    maxClusterRadius: 50,
+                    spiderfyOnMaxZoom: true,
+                    showCoverageOnHover: false,
+                    zoomToBoundsOnClick: true
+                });
+
+                L.geoJSON(value, {
                     pointToLayer: function(feature, latlng) {
                         return L.circleMarker(latlng, {
                             radius: 8,
@@ -114,13 +186,28 @@
                             Blok: ${feature.properties.blok}<br>
                             Ancak: ${feature.properties.ancak}<br>
                             TPH: ${feature.properties.tph}<br>
-                            User: ${feature.properties.user_input}<br>
-                            Datetime: ${feature.properties.datetime}
+                            Petugas: ${feature.properties.user_input}<br>
+                            Tanggal: ${feature.properties.tanggal}
                         `;
                         layer.bindPopup(popupContent);
                     }
-                }).addTo(map);
+                }).addTo(tphLayer);
+
+                map.addLayer(tphLayer);
             }
+        }
+
+        function getColorByBlok(blokName) {
+            // Menggunakan nama blok sebagai seed untuk menghasilkan warna yang konsisten
+            let hash = 0;
+            for (let i = 0; i < blokName.length; i++) {
+                hash = blokName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+
+            // Mengkonversi hash menjadi warna HSL
+            // Menggunakan HSL untuk mendapatkan warna yang lebih cerah dan mudah dibedakan
+            const hue = hash % 360;
+            return `hsl(${hue}, 70%, 60%)`; // Saturation 70% dan Lightness 60% untuk warna yang lebih cerah
         }
 
         function updatePlotLayer(value) {
@@ -132,13 +219,14 @@
             if (value && value.features) {
                 plotLayer = L.geoJSON(value, {
                     style: function(feature) {
+                        const isTersidak = feature.properties.tersidak;
                         return {
-                            fillColor: feature.properties.estate ? '#ff7800' : '#3388ff',
+                            fillColor: isTersidak ? '#4CAF50' : '#FF5252', // Hijau jika tersidak, Merah jika belum
                             weight: 2,
                             opacity: 1,
                             color: 'white',
                             dashArray: '3',
-                            fillOpacity: 0.7
+                            fillOpacity: currentFillOpacity
                         };
                     },
                     onEachFeature: function(feature, layer) {
@@ -166,7 +254,7 @@
                                     weight: 5,
                                     color: '#666',
                                     dashArray: '',
-                                    fillOpacity: 0.9
+                                    fillOpacity: Math.min(currentFillOpacity + 0.2, 1.0)
                                 });
                             },
                             mouseout: function(e) {
@@ -175,10 +263,32 @@
                                     weight: 2,
                                     color: 'white',
                                     dashArray: '3',
-                                    fillOpacity: 0.7
+                                    fillOpacity: currentFillOpacity
                                 });
                             }
                         });
+
+                        // Add center label
+                        if (feature.geometry.type === 'Polygon') {
+                            const center = layer.getBounds().getCenter();
+                            const label = L.divIcon({
+                                className: 'blok-label',
+                                html: `<div style="
+                                    background-color: rgba(255, 255, 255, 0.8);
+                                    padding: 5px;
+                                    border-radius: 3px;
+                                    font-weight: bold;
+                                    font-size: 12px;
+                                    border: 1px solid #666;
+                                    white-space: nowrap;
+                                ">${feature.properties.nama}</div>`,
+                                iconSize: [50, 20],
+                                iconAnchor: [25, 10]
+                            });
+                            L.marker(center, {
+                                icon: label
+                            }).addTo(map);
+                        }
                     }
                 }).addTo(map);
 
@@ -207,6 +317,101 @@
         Livewire.on('hide-loader', () => {
             window.hideLoader();
         });
+
+        // Custom Control untuk Legend Info
+        L.Control.LegendInfo = L.Control.extend({
+            onAdd: function(map) {
+                const container = L.DomUtil.create('div', 'leaflet-control legend-info');
+                container.style.backgroundColor = 'white';
+                container.style.padding = '10px';
+                container.style.borderRadius = '5px';
+                container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+                container.style.minWidth = '200px';
+                container.style.maxWidth = '300px';
+
+                // Add toggle button
+                const toggleBtn = L.DomUtil.create('button', '', container);
+                toggleBtn.innerHTML = '▼';
+                toggleBtn.style.float = 'right';
+                toggleBtn.style.border = 'none';
+                toggleBtn.style.background = 'none';
+                toggleBtn.style.cursor = 'pointer';
+                toggleBtn.style.padding = '0 5px';
+
+                // Create content container
+                const contentDiv = L.DomUtil.create('div', '', container);
+                contentDiv.style.display = 'block'; // Initially visible
+
+                // Toggle functionality
+                let isVisible = true;
+                toggleBtn.onclick = function() {
+                    isVisible = !isVisible;
+                    contentDiv.style.display = isVisible ? 'block' : 'none';
+                    toggleBtn.innerHTML = isVisible ? '▼' : '▲';
+                };
+
+                // Update function for legend content
+                this.update = function(legendInfo) {
+                    let html = `<h4 style="margin:0 0 10px 0;font-weight:bold">${legendInfo.title}</h4>`;
+                    html += `<p style="margin:0 0 10px 0">${legendInfo.description}</p>`;
+                    html += '<div style="border-top:1px solid #ccc;padding-top:10px">';
+                    html += `<p style="margin:5px 0"><strong>Total TPH:</strong> ${legendInfo.Total_tph}</p>`;
+
+                    if (legendInfo.user_input && legendInfo.user_input.length > 0) {
+                        html += '<p style="margin:5px 0"><strong>Users:</strong></p>';
+                        html += '<ul style="margin:5px 0;padding-left:20px">';
+                        legendInfo.user_input.forEach(user => {
+                            html += `<li>${user}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+
+                    if (legendInfo.blok_tersidak && legendInfo.blok_tersidak.length > 0) {
+                        html += '<p style="margin:5px 0"><strong>Blok Tersidak:</strong></p>';
+                        html += '<ul style="margin:5px 0;padding-left:20px">';
+                        legendInfo.blok_tersidak.forEach(blok => {
+                            html += `<li>${blok}</li>`;
+                        });
+                        html += '</ul>';
+                    }
+
+                    html += '</div>';
+                    contentDiv.innerHTML = html;
+                };
+
+                // Prevent map click events
+                L.DomEvent.disableClickPropagation(container);
+                L.DomEvent.disableScrollPropagation(container);
+
+                return container;
+            }
+        });
+
+        // Create legend control
+        const legendControl = new L.Control.LegendInfo({
+            position: 'bottomright'
+        });
+        map.addControl(legendControl);
+
+        // Watch for changes in legendInfo
+        @this.watch('legendInfo', value => {
+            if (value) {
+                legendControl.update(value);
+            }
+        });
+
+        // Add CSS to your styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .blok-label {
+                background: none;
+                border: none;
+            }
+            .blok-label div {
+                text-align: center;
+            }
+        `;
+        document.head.appendChild(style);
 
     });
 </script>

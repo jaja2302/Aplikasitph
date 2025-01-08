@@ -11,6 +11,7 @@ use App\Models\EstatePlot;
 use App\Models\Blok;
 use App\Models\KoordinatatTph;
 use Filament\Notifications\Notification;
+use Carbon\Carbon;
 
 class Dashboard extends Component
 {
@@ -28,6 +29,8 @@ class Dashboard extends Component
     public $plotType = '';
     public $coordinatesTPH = ['type' => 'FeatureCollection', 'features' => []];
     public $isLoading = false;
+    public $legendInfo = [];
+    public $blokTersidak = [];
 
     public function mount()
     {
@@ -109,8 +112,29 @@ class Dashboard extends Component
             $this->dispatch('show-loader');
             $this->generateMapPlotBlok();
             $this->updateTPHCoordinates();
+
             $this->dispatch('hide-loader');
         }
+    }
+
+    private function generateLegendInfo($data)
+    {
+        $blok = $data->pluck('blok')->map(function ($blok) {
+            $parts = explode('-', $blok);
+            return end($parts); // Get last item after explode
+        })->unique()->values()->toArray();
+
+        $this->blokTersidak = $blok;
+
+        $legendInfo = [
+            'title' => 'Legend',
+            'description' => 'This is a legend for the map.',
+            'Total_tph' => count($data),
+            'blok_tersidak' => $blok,
+            'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
+        ];
+
+        $this->legendInfo = $legendInfo;
     }
 
     private function updateTPHCoordinates()
@@ -126,6 +150,8 @@ class Dashboard extends Component
 
         $tphPoints = KoordinatatTph::where('afdeling', $key)->get();
 
+        $this->generateLegendInfo($tphPoints);
+
         $features = $tphPoints->map(function ($point) {
             return [
                 'type' => 'Feature',
@@ -135,6 +161,7 @@ class Dashboard extends Component
                 ],
                 'properties' => [
                     'id' => $point->id,
+                    'tanggal' => Carbon::parse($point->datetime)->locale('id')->translatedFormat('l, d F Y \P\u\k\u\l H:i'),
                     'datetime' => $point->datetime,
                     'user_input' => $point->user_input,
                     'estate' => $point->estate,
@@ -162,8 +189,24 @@ class Dashboard extends Component
         $bloks = Blok::where('afdeling', $this->selectedAfdeling)
             ->get()
             ->groupBy('nama');
+        $est = Estate::find($this->selectedEstate)->est;
+        $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        $key = $est . '-' . $afd;
 
-        $features = $bloks->map(function ($blokGroup, $nama) {
+
+        $blokTersidak = KoordinatatTph::where('afdeling', $key)
+            ->pluck('blok')
+            ->map(function ($blok) {
+                $parts = explode('-', $blok);
+                return end($parts);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // dd($blokTersidak);       
+
+        $features = $bloks->map(function ($blokGroup, $nama) use ($blokTersidak) {
             $coordinates = $blokGroup->map(function ($blok) {
                 return [$blok->lon, $blok->lat];
             })->toArray();
@@ -182,7 +225,8 @@ class Dashboard extends Component
                     'luas' => $firstBlok->luas,
                     'sph' => $firstBlok->sph,
                     'bjr' => $firstBlok->bjr,
-                    'afdeling' => $firstBlok->afdeling
+                    'afdeling' => $firstBlok->afdeling,
+                    'tersidak' => in_array($nama, $blokTersidak)
                 ]
             ];
         })->values()->toArray();
