@@ -34,23 +34,3 @@
     }
 }
 
-.dashboard-loader {
-    display: none;
-}
-
-.dashboard-loader.show {
-    display: flex;
-}
-
-.dashboard-loader.show {
-    animation: none;
-}
-
-.map-loader {
-    animation: none !important;
-    display: none;
-}
-
-.map-loader.show {
-    display: flex !important;
-}

@@ -68,10 +68,6 @@
     <!-- Main Content -->
     <div class="container mx-auto p-4">
         <div class="bg-white rounded-lg shadow-md">
-            @if($isLoading)
-            <x-loader text="Memuat peta..." size="w-20 h-20" />
-
-            @endif
             <div id="map" wire:ignore class="h-[600px] w-full rounded-lg"></div>
         </div>
     </div>
@@ -201,6 +197,17 @@
         @this.watch('coordinatesTPH', value => {
             updateTPHMarkers(value);
         });
+
+
+        // Add Livewire event listeners for loader
+        Livewire.on('show-loader', () => {
+            window.showLoader();
+        });
+
+        Livewire.on('hide-loader', () => {
+            window.hideLoader();
+        });
+
     });
 </script>
 @endpush

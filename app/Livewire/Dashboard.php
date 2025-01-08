@@ -61,9 +61,11 @@ class Dashboard extends Component
 
     public function processAfdelingUpdate()
     {
+        $this->dispatch('show-loader');
         $this->isLoading = true;
         $this->resetSelections('afdeling');
         $this->updateMaps();
+        $this->dispatch('hide-loader');
     }
 
     public function updatedPlotType()
@@ -103,14 +105,11 @@ class Dashboard extends Component
 
     private function updateMaps()
     {
-        // Always generate blok plot if afdeling is selected
         if ($this->selectedAfdeling) {
+            $this->dispatch('show-loader');
             $this->generateMapPlotBlok();
-        }
-
-        // Always update TPH coordinates if afdeling is selected
-        if ($this->selectedAfdeling) {
             $this->updateTPHCoordinates();
+            $this->dispatch('hide-loader');
         }
     }
 
@@ -192,10 +191,6 @@ class Dashboard extends Component
             'type' => 'FeatureCollection',
             'features' => $features
         ];
-
-        // Tambahkan delay kecil sebelum menyembunyikan loading
-        usleep(100000); // 0.1 detik delay
-        $this->dispatch('hide-loading');
     }
 
     public function render()
