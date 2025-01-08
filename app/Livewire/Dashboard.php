@@ -31,11 +31,13 @@ class Dashboard extends Component
     public $isLoading = false;
     public $legendInfo = [];
     public $blokTersidak = [];
+    public $selectedDate;
 
     public function mount()
     {
         $this->title = 'Maps TPH';
         $this->regional = Regional::all();
+        $this->selectedDate = now()->format('Y-m-d');
     }
 
     public function updatedSelectedRegional()
@@ -74,6 +76,13 @@ class Dashboard extends Component
     public function updatedPlotType()
     {
         $this->updateMaps();
+    }
+
+    public function updatedSelectedDate()
+    {
+        if ($this->selectedAfdeling) {
+            $this->updateMaps();
+        }
     }
 
     private function resetSelections($level)
@@ -128,9 +137,10 @@ class Dashboard extends Component
 
         $legendInfo = [
             'title' => 'Legend',
-            'description' => 'This is a legend for the map.',
+            'description' => 'Detail data TPH',
             'Total_tph' => count($data),
             'blok_tersidak' => $blok,
+            'tanggal' => Carbon::parse($this->selectedDate)->locale('id')->translatedFormat('l, d F Y'),
             'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
         ];
 
@@ -148,7 +158,9 @@ class Dashboard extends Component
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $key = $est . '-' . $afd;
 
-        $tphPoints = KoordinatatTph::where('afdeling', $key)->get();
+        $tphPoints = KoordinatatTph::where('afdeling', $key)
+            ->whereDate('datetime', $this->selectedDate)
+            ->get();
 
         $this->generateLegendInfo($tphPoints);
 

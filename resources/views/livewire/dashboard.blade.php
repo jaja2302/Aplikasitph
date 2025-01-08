@@ -9,6 +9,14 @@
     <!-- Dropdown Container -->
     <div class="container mx-auto p-4">
         <div class="grid grid-cols-2 gap-4">
+            <!-- Add date picker before regional selection -->
+            <div>
+                <input
+                    type="date"
+                    wire:model.live="selectedDate"
+                    class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+            </div>
+
             <!-- select regional -->
             <div>
                 <select wire:model.live="selectedRegional" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
@@ -359,6 +367,7 @@
                 this.update = function(legendInfo) {
                     let html = `<h4 style="margin:0 0 10px 0;font-weight:bold">${legendInfo.title}</h4>`;
                     html += `<p style="margin:0 0 10px 0">${legendInfo.description}</p>`;
+                    html += `<p style="margin:0 0 10px 0">${legendInfo.tanggal}</p>`;
                     html += '<div style="border-top:1px solid #ccc;padding-top:10px">';
                     html += `<p style="margin:5px 0"><strong>Total TPH:</strong> ${legendInfo.Total_tph}</p>`;
 
