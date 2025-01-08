@@ -20,7 +20,7 @@ class Dashboard extends Component
     public $wilayah = [];
     public $estate = [];
     public $afdeling = [];
-
+    public $blok = [];
     public $selectedRegional = '';
     public $selectedWilayah = '';
     public $selectedEstate = '';
@@ -32,7 +32,7 @@ class Dashboard extends Component
     public $legendInfo = [];
     public $blokTersidak = [];
     public $selectedDate;
-
+    public $selectedBlok = '';
     public function mount()
     {
         $this->title = 'Maps TPH';
@@ -61,7 +61,14 @@ class Dashboard extends Component
     public function updatedSelectedAfdeling()
     {
         $this->resetSelections('afdeling');
-        $this->updateMaps();
+        $this->blok = $this->selectedAfdeling ? Blok::where('afdeling', $this->selectedAfdeling)->get()->unique('nama') : [];
+        $this->updateMaps($this->blok);
+    }
+
+    public function updatedSelectedBlok()
+    {
+        $this->resetSelections('blok');
+        $this->updateMaps($this->blok);
     }
 
     public function processAfdelingUpdate()
@@ -69,19 +76,19 @@ class Dashboard extends Component
         $this->dispatch('show-loader');
         $this->isLoading = true;
         $this->resetSelections('afdeling');
-        $this->updateMaps();
+        $this->updateMaps($this->blok);
         $this->dispatch('hide-loader');
     }
 
     public function updatedPlotType()
     {
-        $this->updateMaps();
+        $this->updateMaps($this->blok);
     }
 
     public function updatedSelectedDate()
     {
         if ($this->selectedAfdeling) {
-            $this->updateMaps();
+            $this->updateMaps($this->blok);
         }
     }
 
@@ -95,19 +102,28 @@ class Dashboard extends Component
                 $this->selectedWilayah = '';
                 $this->selectedEstate = '';
                 $this->selectedAfdeling = '';
+                $this->selectedBlok = '';
                 $this->estate = [];
                 $this->afdeling = [];
+                $this->blok = [];
                 break;
             case 'wilayah':
                 $this->selectedEstate = '';
                 $this->selectedAfdeling = '';
+                $this->selectedBlok = '';
                 $this->afdeling = [];
+                $this->blok = [];
                 break;
             case 'estate':
                 $this->selectedAfdeling = '';
+                $this->selectedBlok = '';
+                $this->blok = [];
                 break;
             case 'afdeling':
-                // Hanya reset plot dan TPH data
+                $this->selectedBlok = '';
+                break;
+            case 'blok':
+                // Only reset plot and TPH data
                 break;
         }
 
@@ -115,13 +131,12 @@ class Dashboard extends Component
         $this->coordinatesTPH = ['type' => 'FeatureCollection', 'features' => []];
     }
 
-    private function updateMaps()
+    private function updateMaps($blok)
     {
         if ($this->selectedAfdeling) {
             $this->dispatch('show-loader');
-            $this->generateMapPlotBlok();
+            $this->generateMapPlotBlok($blok);
             $this->updateTPHCoordinates();
-
             $this->dispatch('hide-loader');
         }
     }
@@ -132,9 +147,6 @@ class Dashboard extends Component
             $parts = explode('-', $blok);
             return end($parts); // Get last item after explode
         })->unique()->values()->toArray();
-
-        $this->blokTersidak = $blok;
-
         $legendInfo = [
             'title' => 'Legend',
             'description' => 'Detail data TPH',
@@ -158,8 +170,15 @@ class Dashboard extends Component
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $key = $est . '-' . $afd;
 
-        $tphPoints = KoordinatatTph::where('afdeling', $key)
-            ->whereDate('datetime', $this->selectedDate)
+        $tphPoints = KoordinatatTph::where('afdeling', $key);
+
+        // Add this condition if a specific blok is selected
+        if ($this->selectedBlok) {
+            $blokNama = Blok::find($this->selectedBlok)->nama;
+            $tphPoints->where('blok', 'LIKE', '%' . $blokNama . '%');
+        }
+
+        $tphPoints = $tphPoints->whereDate('datetime', $this->selectedDate)
             ->get();
 
         $this->generateLegendInfo($tphPoints);
@@ -198,13 +217,19 @@ class Dashboard extends Component
             return;
         }
 
-        $bloks = Blok::where('afdeling', $this->selectedAfdeling)
-            ->get()
-            ->groupBy('nama');
+        $query = Blok::where('afdeling', $this->selectedAfdeling);
+
+        // Add filter for specific blok if selected
+        if ($this->selectedBlok) {
+            $selectedBlokNama = Blok::find($this->selectedBlok)->nama;
+            $query->where('nama', $selectedBlokNama);
+        }
+
+        $bloks = $query->get()->groupBy('nama');
+
         $est = Estate::find($this->selectedEstate)->est;
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $key = $est . '-' . $afd;
-
 
         $blokTersidak = KoordinatatTph::where('afdeling', $key)
             ->pluck('blok')
@@ -215,8 +240,6 @@ class Dashboard extends Component
             ->unique()
             ->values()
             ->toArray();
-
-        // dd($blokTersidak);       
 
         $features = $bloks->map(function ($blokGroup, $nama) use ($blokTersidak) {
             $coordinates = $blokGroup->map(function ($blok) {

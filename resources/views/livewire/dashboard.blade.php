@@ -57,19 +57,15 @@
                 </select>
             </div>
 
-            <!-- Plot Type Selection -->
-            <!-- <div class="@if(!$selectedAfdeling) opacity-50 pointer-events-none @endif">
-                <div class="flex space-x-4 items-center bg-white p-3 rounded-lg border border-gray-300">
-                    <label class="inline-flex items-center">
-                        <input type="radio" wire:model.live="plotType" value="estate" class="form-radio text-blue-500 focus:ring-blue-500 h-5 w-5">
-                        <span class="ml-2">Plot Estate</span>
-                    </label>
-                    <label class="inline-flex items-center">
-                        <input type="radio" wire:model.live="plotType" value="blok" class="form-radio text-blue-500 focus:ring-blue-500 h-5 w-5">
-                        <span class="ml-2">Plot Blok</span>
-                    </label>
-                </div>
-            </div> -->
+            <!-- select blok based afdeling -->
+            <div>
+                <select wire:model.live="selectedBlok" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$blok) disabled @endif>
+                    <option value="" class="text-gray-500">-- Pilih Blok --</option>
+                    @foreach ($blok ?? [] as $item)
+                    <option value="{{ $item->id }}" class="py-2">{{ $item->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
     </div>
 
@@ -170,13 +166,17 @@
             }
 
             if (value && Array.isArray(value.features) && value.features.length > 0) {
-                tphLayer = L.markerClusterGroup({
-                    chunkedLoading: true,
-                    maxClusterRadius: 50,
-                    spiderfyOnMaxZoom: true,
-                    showCoverageOnHover: false,
-                    zoomToBoundsOnClick: true
-                });
+                // Comment out marker cluster initialization
+                // tphLayer = L.markerClusterGroup({
+                //     chunkedLoading: true,
+                //     maxClusterRadius: 50,
+                //     spiderfyOnMaxZoom: true,
+                //     showCoverageOnHover: false,
+                //     zoomToBoundsOnClick: true
+                // });
+
+                // Instead, use a regular feature group
+                tphLayer = L.featureGroup();
 
                 L.geoJSON(value, {
                     pointToLayer: function(feature, latlng) {
@@ -322,14 +322,6 @@
         });
 
 
-        // Add Livewire event listeners for loader
-        Livewire.on('show-loader', () => {
-            window.showLoader();
-        });
-
-        Livewire.on('hide-loader', () => {
-            window.hideLoader();
-        });
 
         // Custom Control untuk Legend Info
         L.Control.LegendInfo = L.Control.extend({
@@ -426,6 +418,14 @@
             }
         `;
         document.head.appendChild(style);
+        // Add Livewire event listeners for loader
+        Livewire.on('show-loader', () => {
+            window.showLoader();
+        });
+
+        Livewire.on('hide-loader', () => {
+            window.hideLoader();
+        });
 
     });
 </script>
