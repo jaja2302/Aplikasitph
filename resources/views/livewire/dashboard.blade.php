@@ -14,12 +14,13 @@
                 <input
                     type="date"
                     wire:model.live="selectedDate"
-                    class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                    class="form-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    @if($isProcessing) disabled @endif>
             </div>
 
             <!-- select regional -->
             <div>
-                <select wire:model.live="selectedRegional" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                <select wire:model.live="selectedRegional" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" @if($isProcessing) disabled @endif>
                     <option value="" class="text-gray-500">-- Pilih Regional --</option>
                     @foreach ($regional as $item)
                     <option value="{{ $item->id }}" class="py-2">{{ $item->nama }}</option>
@@ -29,7 +30,7 @@
 
             <!-- select wilayah based regional -->
             <div>
-                <select wire:model.live="selectedWilayah" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$wilayah) disabled @endif>
+                <select wire:model.live="selectedWilayah" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$wilayah || $isProcessing) disabled @endif>
                     <option value="" class="text-gray-500">-- Pilih Wilayah --</option>
                     @foreach ($wilayah ?? [] as $item)
                     <option value="{{ $item->id }}" class="py-2">{{ $item->nama }}</option>
@@ -39,7 +40,7 @@
 
             <!-- select estate based wilayah -->
             <div>
-                <select wire:model.live="selectedEstate" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$estate) disabled @endif>
+                <select wire:model.live="selectedEstate" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$estate || $isProcessing) disabled @endif>
                     <option value="" class="text-gray-500">-- Pilih Estate --</option>
                     @foreach ($estate ?? [] as $item)
                     <option value="{{ $item->id }}" class="py-2">{{ $item->nama }}</option>
@@ -49,7 +50,7 @@
 
             <!-- select afdeling based estate -->
             <div>
-                <select wire:model.live="selectedAfdeling" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$afdeling) disabled @endif>
+                <select wire:model.live="selectedAfdeling" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$afdeling || $isProcessing) disabled @endif>
                     <option value="" class="text-gray-500">-- Pilih Afdeling --</option>
                     @foreach ($afdeling ?? [] as $item)
                     <option value="{{ $item->id }}" class="py-2">{{ $item->nama }}</option>
@@ -59,7 +60,7 @@
 
             <!-- select blok based afdeling -->
             <div>
-                <select wire:model.live="selectedBlok" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$blok) disabled @endif>
+                <select wire:model.live="selectedBlok" class="form-select w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-500" @if(!$blok || $isProcessing) disabled @endif>
                     <option value="" class="text-gray-500">-- Pilih Blok --</option>
                     @foreach ($blok ?? [] as $item)
                     <option value="{{ $item->id }}" class="py-2">{{ $item->nama }}</option>
@@ -427,6 +428,10 @@
             window.hideLoader();
         });
 
+        // Add listener for process-afdeling-update
+        Livewire.on('process-afdeling-update', () => {
+            @this.processAfdelingUpdate();
+        });
     });
 </script>
 @endpush

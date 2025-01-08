@@ -33,6 +33,8 @@ class Dashboard extends Component
     public $blokTersidak = [];
     public $selectedDate;
     public $selectedBlok = '';
+    public $isProcessing = false;
+
     public function mount()
     {
         $this->title = 'Maps TPH';
@@ -60,9 +62,13 @@ class Dashboard extends Component
 
     public function updatedSelectedAfdeling()
     {
+        $this->isProcessing = true;
+        $this->dispatch('show-loader');
+
         $this->resetSelections('afdeling');
         $this->blok = $this->selectedAfdeling ? Blok::where('afdeling', $this->selectedAfdeling)->get()->unique('nama') : [];
-        $this->updateMaps($this->blok);
+
+        $this->dispatch('process-afdeling-update');
     }
 
     public function updatedSelectedBlok()
@@ -73,10 +79,8 @@ class Dashboard extends Component
 
     public function processAfdelingUpdate()
     {
-        $this->dispatch('show-loader');
-        $this->isLoading = true;
-        $this->resetSelections('afdeling');
         $this->updateMaps($this->blok);
+        $this->isProcessing = false;
         $this->dispatch('hide-loader');
     }
 
