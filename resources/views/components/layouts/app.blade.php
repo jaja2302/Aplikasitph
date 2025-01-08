@@ -50,6 +50,16 @@
         {{ $slot }}
     </div>
 
+    <script type="module">
+        // Tampilkan loader saat halaman mulai dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            showLoader();
+            // Sembunyikan loader setelah semua konten dimuat
+            window.addEventListener('load', () => {
+                hideLoader();
+            });
+        });
+    </script>
 </body>
 
 </html>
