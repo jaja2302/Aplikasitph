@@ -80,7 +80,8 @@
         const map = L.map('map').setView([-2.2653013566283, 111.65335780362], 13);
         let tphLayer = null;
         let plotLayer = null;
-        let currentFillOpacity = 0.7; // Default opacity
+        let labelMarkers = [];
+        let currentFillOpacity = 0.7;
 
         // Custom Control untuk Opacity
         L.Control.OpacitySlider = L.Control.extend({
@@ -216,6 +217,9 @@
                 plotLayer = null;
             }
 
+            labelMarkers.forEach(marker => map.removeLayer(marker));
+            labelMarkers = [];
+
             if (value && value.features) {
                 plotLayer = L.geoJSON(value, {
                     style: function(feature) {
@@ -285,9 +289,10 @@
                                 iconSize: [50, 20],
                                 iconAnchor: [25, 10]
                             });
-                            L.marker(center, {
+                            const labelMarker = L.marker(center, {
                                 icon: label
                             }).addTo(map);
+                            labelMarkers.push(labelMarker);
                         }
                     }
                 }).addTo(map);
@@ -358,7 +363,7 @@
                     html += `<p style="margin:5px 0"><strong>Total TPH:</strong> ${legendInfo.Total_tph}</p>`;
 
                     if (legendInfo.user_input && legendInfo.user_input.length > 0) {
-                        html += '<p style="margin:5px 0"><strong>Users:</strong></p>';
+                        html += '<p style="margin:5px 0"><strong>Petugas:</strong></p>';
                         html += '<ul style="margin:5px 0;padding-left:20px">';
                         legendInfo.user_input.forEach(user => {
                             html += `<li>${user}</li>`;
