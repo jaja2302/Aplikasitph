@@ -2,3 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 @tailwind variants;
+
+
+.loader {
+    animation: fadeOut 0.5s ease-in-out 1.5s forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+.loader-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.dashboard-loader {
+    display: none;
+}
+
+.dashboard-loader.show {
+    display: flex;
+}
+
+.dashboard-loader.show {
+    animation: none;
+}
+
+.map-loader {
+    animation: none !important;
+    display: none;
+}
+
+.map-loader.show {
+    display: flex !important;
+}

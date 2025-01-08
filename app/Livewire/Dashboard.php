@@ -10,6 +10,7 @@ use App\Models\Afdeling;
 use App\Models\EstatePlot;
 use App\Models\Blok;
 use App\Models\KoordinatatTph;
+use Filament\Notifications\Notification;
 
 class Dashboard extends Component
 {
@@ -58,6 +59,13 @@ class Dashboard extends Component
         $this->updateMaps();
     }
 
+    public function processAfdelingUpdate()
+    {
+        $this->isLoading = true;
+        $this->resetSelections('afdeling');
+        $this->updateMaps();
+    }
+
     public function updatedPlotType()
     {
         $this->updateMaps();
@@ -95,12 +103,8 @@ class Dashboard extends Component
 
     private function updateMaps()
     {
-        $this->isLoading = true;
-
-        // Update plot map based on type
-        if ($this->plotType === 'estate') {
-            $this->generateMapPlotEstate();
-        } elseif ($this->plotType === 'blok') {
+        // Always generate blok plot if afdeling is selected
+        if ($this->selectedAfdeling) {
             $this->generateMapPlotBlok();
         }
 
@@ -108,8 +112,6 @@ class Dashboard extends Component
         if ($this->selectedAfdeling) {
             $this->updateTPHCoordinates();
         }
-
-        $this->isLoading = false;
     }
 
     private function updateTPHCoordinates()
@@ -148,35 +150,6 @@ class Dashboard extends Component
         $this->coordinatesTPH = [
             'type' => 'FeatureCollection',
             'features' => $features
-        ];
-    }
-
-    private function generateMapPlotEstate()
-    {
-        if (!$this->selectedEstate) {
-            $this->plotMap = [];
-            return;
-        }
-
-        $est = Estate::find($this->selectedEstate)->est;
-        $plots = EstatePlot::where('est', $est)->get();
-
-        $coordinates = $plots->map(function ($plot) {
-            return [$plot->lon, $plot->lat];
-        })->toArray();
-
-        $this->plotMap = [
-            'type' => 'FeatureCollection',
-            'features' => [[
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Polygon',
-                    'coordinates' => [$coordinates]
-                ],
-                'properties' => [
-                    'estate' => $est
-                ]
-            ]]
         ];
     }
 
@@ -219,6 +192,10 @@ class Dashboard extends Component
             'type' => 'FeatureCollection',
             'features' => $features
         ];
+
+        // Tambahkan delay kecil sebelum menyembunyikan loading
+        usleep(100000); // 0.1 detik delay
+        $this->dispatch('hide-loading');
     }
 
     public function render()

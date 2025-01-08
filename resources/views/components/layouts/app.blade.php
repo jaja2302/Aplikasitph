@@ -22,37 +22,8 @@
     @filamentScripts
     @stack('scripts')
 
-    <style>
-        .loader {
-            animation: fadeOut 0.5s ease-in-out 1.5s forwards;
-        }
+    @livewire('notifications')
 
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-                visibility: visible;
-            }
-
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-
-        .loader-spin {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
 </head>
 
 <body class="h-full font-sans antialiased">

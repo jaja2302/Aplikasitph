@@ -50,7 +50,7 @@
             </div>
 
             <!-- Plot Type Selection -->
-            <div class="@if(!$selectedAfdeling) opacity-50 pointer-events-none @endif">
+            <!-- <div class="@if(!$selectedAfdeling) opacity-50 pointer-events-none @endif">
                 <div class="flex space-x-4 items-center bg-white p-3 rounded-lg border border-gray-300">
                     <label class="inline-flex items-center">
                         <input type="radio" wire:model.live="plotType" value="estate" class="form-radio text-blue-500 focus:ring-blue-500 h-5 w-5">
@@ -61,7 +61,7 @@
                         <span class="ml-2">Plot Blok</span>
                     </label>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
 
