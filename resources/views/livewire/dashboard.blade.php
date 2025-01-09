@@ -4,93 +4,101 @@
         <h1 class="text-2xl font-semibold text-gray-900">{{ $title }}</h1>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-white shadow-sm rounded-lg p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Date Picker -->
-            <div class="space-y-2">
-                <label for="date" class="block text-sm font-medium text-gray-700">Tanggal</label>
-                <input
-                    type="date"
-                    id="date"
-                    wire:model.live="selectedDate"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    @if($isProcessing) disabled @endif>
-            </div>
+    <div x-data="{ open: false }" class="bg-white shadow-sm rounded-lg">
+        <!-- Toggle Button -->
+        <div class="flex justify-between items-center p-4 cursor-pointer bg-gray-100" @click="open = !open">
+            <h2 class="text-lg font-semibold text-gray-700">Click Untuk membuka filter</h2>
+            <svg
+                :class="open ? 'rotate-180' : ''"
+                class="w-6 h-6 transition-transform duration-200"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </div>
 
-            <!-- Regional Select -->
-            <div class="space-y-2">
-                <label for="regional" class="block text-sm font-medium text-gray-700">Regional</label>
-                <select
-                    id="regional"
-                    wire:model.live="selectedRegional"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    @if($isProcessing) disabled @endif>
-                    <option value="">Pilih Regional</option>
-                    @foreach($regional as $reg)
-                    <option value="{{ $reg->id }}">{{ $reg->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <!-- Filters -->
+        <div
+            x-show="open"
+            x-collapse
+            class="p-6 transition duration-300 ease-in-out">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Regional Select -->
+                <div class="space-y-2">
+                    <label for="regional" class="block text-sm font-medium text-gray-700">Regional</label>
+                    <select
+                        id="regional"
+                        wire:model.live="selectedRegional"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+                        @if($isProcessing) disabled @endif>
+                        <option value="">Pilih Regional</option>
+                        @foreach($regional as $reg)
+                        <option value="{{ $reg->id }}">{{ $reg->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <!-- Wilayah Select -->
-            <div class="space-y-2">
-                <label for="wilayah" class="block text-sm font-medium text-gray-700">Wilayah</label>
-                <select
-                    id="wilayah"
-                    wire:model.live="selectedWilayah"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    @if(!$wilayah || $isProcessing) disabled @endif>
-                    <option value="">Pilih Wilayah</option>
-                    @foreach($wilayah as $wil)
-                    <option value="{{ $wil->id }}">{{ $wil->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
+                <!-- Wilayah Select -->
+                <div class="space-y-2">
+                    <label for="wilayah" class="block text-sm font-medium text-gray-700">Wilayah</label>
+                    <select
+                        id="wilayah"
+                        wire:model.live="selectedWilayah"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+                        @if(!$wilayah || $isProcessing) disabled @endif>
+                        <option value="">Pilih Wilayah</option>
+                        @foreach($wilayah as $wil)
+                        <option value="{{ $wil->id }}">{{ $wil->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <!-- Estate Select -->
-            <div class="space-y-2">
-                <label for="estate" class="block text-sm font-medium text-gray-700">Estate</label>
-                <select
-                    id="estate"
-                    wire:model.live="selectedEstate"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    @if(!$estate || $isProcessing) disabled @endif>
-                    <option value="">Pilih Estate</option>
-                    @foreach($estate as $est)
-                    <option value="{{ $est->id }}">{{ $est->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
+                <!-- Estate Select -->
+                <div class="space-y-2">
+                    <label for="estate" class="block text-sm font-medium text-gray-700">Estate</label>
+                    <select
+                        id="estate"
+                        wire:model.live="selectedEstate"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+                        @if(!$estate || $isProcessing) disabled @endif>
+                        <option value="">Pilih Estate</option>
+                        @foreach($estate as $est)
+                        <option value="{{ $est->id }}">{{ $est->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <!-- Afdeling Select -->
-            <div class="space-y-2">
-                <label for="afdeling" class="block text-sm font-medium text-gray-700">Afdeling</label>
-                <select
-                    id="afdeling"
-                    wire:model.live="selectedAfdeling"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    @if(!$afdeling || $isProcessing) disabled @endif>
-                    <option value="">Pilih Afdeling</option>
-                    @foreach($afdeling as $afd)
-                    <option value="{{ $afd->id }}">{{ $afd->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
+                <!-- Afdeling Select -->
+                <div class="space-y-2">
+                    <label for="afdeling" class="block text-sm font-medium text-gray-700">Afdeling</label>
+                    <select
+                        id="afdeling"
+                        wire:model.live="selectedAfdeling"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+                        @if(!$afdeling || $isProcessing) disabled @endif>
+                        <option value="">Pilih Afdeling</option>
+                        @foreach($afdeling as $afd)
+                        <option value="{{ $afd->id }}">{{ $afd->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-            <!-- Blok Select -->
-            <div class="space-y-2">
-                <label for="blok" class="block text-sm font-medium text-gray-700">Blok</label>
-                <select
-                    id="blok"
-                    wire:model.live="selectedBlok"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                    @if(!$blok || $isProcessing) disabled @endif>
-                    <option value="">Pilih Blok</option>
-                    @foreach($blok as $blk)
-                    <option value="{{ $blk->id }}">{{ $blk->nama }}</option>
-                    @endforeach
-                </select>
+                <!-- Blok Select -->
+                <div class="space-y-2">
+                    <label for="blok" class="block text-sm font-medium text-gray-700">Blok</label>
+                    <select
+                        id="blok"
+                        wire:model.live="selectedBlok"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+                        @if(!$blok || $isProcessing) disabled @endif>
+                        <option value="">Pilih Blok</option>
+                        @foreach($blok as $blk)
+                        <option value="{{ $blk->id }}">{{ $blk->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -102,14 +110,6 @@
 
 </div>
 
-@push('styles')
-<style>
-    .mapboxgl-ctrl-top-right {
-        top: 1rem !important;
-        right: 1rem !important;
-    }
-</style>
-@endpush
 
 @push('scripts')
 <script type="module">

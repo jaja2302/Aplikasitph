@@ -39,7 +39,7 @@ class Dashboard extends Component
     {
         $this->title = 'Maps TPH';
         $this->regional = Regional::all();
-        $this->selectedDate = now()->format('Y-m-d');
+        // $this->selectedDate = now()->format('Y-m-d');
     }
 
     public function updatedSelectedRegional()
@@ -156,7 +156,7 @@ class Dashboard extends Component
             'description' => 'Detail data TPH',
             'Total_tph' => count($data),
             'blok_tersidak' => $blok,
-            'tanggal' => Carbon::parse($this->selectedDate)->locale('id')->translatedFormat('l, d F Y'),
+            // 'tanggal' => Carbon::parse($this->selectedDate)->locale('id')->translatedFormat('l, d F Y'),
             'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
         ];
 
@@ -174,6 +174,8 @@ class Dashboard extends Component
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $key = $est . '-' . $afd;
 
+
+        // Add this condition if a specific blok is selected
         $tphPoints = KoordinatatTph::where('afdeling', $key);
 
         // Add this condition if a specific blok is selected
@@ -182,8 +184,11 @@ class Dashboard extends Component
             $tphPoints->where('blok', 'LIKE', '%' . $blokNama . '%');
         }
 
-        $tphPoints = $tphPoints->whereDate('datetime', $this->selectedDate)
-            ->get();
+        // Retrieve the data
+        $tphPoints = $tphPoints->get();
+
+        // $tphPoints = $tphPoints->whereDate('datetime', $this->selectedDate)
+
 
         $this->generateLegendInfo($tphPoints);
 
