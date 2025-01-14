@@ -281,6 +281,16 @@ class Dashboard extends Component
         ];
     }
 
+
+    public function editTPH($id)
+    {
+        dd($id);
+        // Trigger modal dengan data TPH yang akan diedit
+        $this->dispatch('show-edit-tph-modal', [
+            'tphId' => $id
+        ]);
+    }
+
     public function render()
     {
         return view('livewire.dashboard');
