@@ -8,5 +8,7 @@ class KoordinatatTph extends Model
 {
     //
     protected $table = 'koordinattph';
-    protected $fillable = ['key', 'coordinates'];
+    // protected $fillable = ['key', 'coordinates'];
+    protected $guarded = ['id'];
+    public $timestamps = false;
 }

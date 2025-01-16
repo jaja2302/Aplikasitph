@@ -6,6 +6,7 @@ export default {
         './app/Filament/**/*.php',
         './resources/views/**/*.blade.php',
         './vendor/filament/**/*.blade.php',
+        './node_modules/flyonui/dist/js/*.js'
     ],
     theme: {
         extend: {
@@ -25,4 +26,8 @@ export default {
             },
         },
     },
+    plugins: [
+        require("flyonui"),
+        require("flyonui/plugin") // Require only if you want to use FlyonUI JS component
+      ]
 }

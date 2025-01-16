@@ -43,4 +43,9 @@ class Pengguna extends Authenticatable
     {
         return $this->password;
     }
+
+    public function jabatanpengguna()
+    {
+        return $this->belongsTo(Jabatan::class, 'id_jabatan', 'id');
+    }
 }

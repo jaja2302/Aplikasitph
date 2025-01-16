@@ -12,6 +12,7 @@ use App\Models\Blok;
 use App\Models\KoordinatatTph;
 use Filament\Notifications\Notification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class Dashboard extends Component
 {
@@ -34,11 +35,18 @@ class Dashboard extends Component
     public $selectedDate;
     public $selectedBlok = '';
     public $isProcessing = false;
+    public $tphData;
+    public $editTphId;
+    public $editTphNumber;
+    public $editAncakNumber;
+    public $user;
 
     public function mount()
     {
         $this->title = 'Maps TPH';
         $this->regional = Regional::all();
+        $this->user = check_previlege(Auth::user()->user_id);
+        // dd($this->user);
         // $this->selectedDate = now()->format('Y-m-d');
     }
 
@@ -281,14 +289,156 @@ class Dashboard extends Component
         ];
     }
 
-
     public function editTPH($id)
     {
-        dd($id);
-        // Trigger modal dengan data TPH yang akan diedit
-        $this->dispatch('show-edit-tph-modal', [
-            'tphId' => $id
+        // Add privilege check before allowing edit
+        if (!$this->user) {
+            Notification::make()
+                ->title('Access Denied')
+                ->warning()
+                ->body('You do not have permission to edit TPH data.')
+                ->send();
+            return;
+        }
+
+        $tph = KoordinatatTph::find($id);
+        if (!$tph) {
+            Notification::make()
+                ->title('Error')
+                ->danger()
+                ->body('TPH data not found.')
+                ->send();
+            return;
+        }
+
+        $this->editTphId = $id;
+        $this->editTphNumber = $tph->tph;
+        $this->editAncakNumber = $tph->ancak;
+        $this->dispatch('open-modal', id: 'modaltph');
+    }
+
+    public function updateTPH()
+    {
+        // Add privilege check before allowing update
+        if (!$this->user) {
+            Notification::make()
+                ->title('Access Denied')
+                ->warning()
+                ->body('You do not have permission to update TPH data.')
+                ->send();
+            return;
+        }
+
+        // dd($this->user);
+        // Validate inputs
+        $this->validate([
+            'editTphNumber' => 'required|numeric|min:1',
+            'editAncakNumber' => 'required|numeric|min:1',
+        ], [
+            'editTphNumber.required' => 'Nomor TPH harus diisi',
+            'editTphNumber.numeric' => 'Nomor TPH harus berupa angka',
+            'editTphNumber.min' => 'Nomor TPH minimal 1',
+            'editAncakNumber.required' => 'Nomor Ancak harus diisi',
+            'editAncakNumber.numeric' => 'Nomor Ancak harus berupa angka',
+            'editAncakNumber.min' => 'Nomor Ancak minimal 1',
         ]);
+
+
+        $tph = KoordinatatTph::find($this->editTphId);
+
+        // dd($tph);
+        if (!$tph) {
+            Notification::make()
+                ->title('Error')
+                ->danger()
+                ->body('TPH data not found.')
+                ->send();
+            return;
+        }
+        // dd($this->editTphNumber, $this->editAncakNumber, $tph);
+        try {
+            $tph->update([
+                'tph' => $this->editTphNumber,
+                'ancak' => $this->editAncakNumber,
+            ]);
+
+            $this->dispatch('close-modal', id: 'modaltph');
+            $this->updateTPHCoordinates(); // Refresh data TPH
+
+            Notification::make()
+                ->title('Berhasil')
+                ->success()
+                ->body('Data TPH berhasil diperbarui.')
+                ->send();
+        } catch (\Exception $e) {
+            // dd($e);
+            Notification::make()
+                ->title('Error')
+                ->danger()
+                ->body('Gagal memperbarui data TPH.')
+                ->send();
+        }
+    }
+
+    public function confirmDeleteTPH()
+    {
+        // Validate that we have an ID to delete
+        if (!$this->editTphId) {
+            Notification::make()
+                ->title('Error')
+                ->danger()
+                ->body('No TPH selected for deletion.')
+                ->send();
+            return;
+        }
+
+        $this->dispatch('open-modal', id: 'confirmdelete');
+    }
+
+    public function deleteTPH()
+    {
+        // Check user privileges
+        if (!$this->user) {
+            Notification::make()
+                ->title('Access Denied')
+                ->warning()
+                ->body('You do not have permission to delete TPH data.')
+                ->send();
+            return;
+        }
+
+        try {
+            $tph = KoordinatatTph::find($this->editTphId);
+            if (!$tph) {
+                Notification::make()
+                    ->title('Error')
+                    ->danger()
+                    ->body('TPH data not found.')
+                    ->send();
+                return;
+            }
+
+            $tph->delete();
+
+            // Close the modal after successful deletion
+            $this->dispatch('close-modal', id: 'confirmdelete');
+            $this->dispatch('close-modal', id: 'modaltph');
+
+            // Refresh TPH data
+            $this->updateTPHCoordinates();
+
+            Notification::make()
+                ->title('Berhasil')
+                ->success()
+                ->body('Data TPH berhasil dihapus.')
+                ->send();
+        } catch (\Exception $e) {
+            Notification::make()
+                ->title('Error')
+                ->danger()
+                ->body('Gagal menghapus data TPH.')
+                ->send();
+        }
     }
 
     public function render()

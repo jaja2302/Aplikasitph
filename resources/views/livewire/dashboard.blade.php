@@ -1,4 +1,73 @@
 <div class="space-y-6 p-4 bg-gray-50 min-h-screen">
+    <x-filament::modal id="modaltph" width="md">
+        <x-slot name="heading">
+            Edit TPH
+        </x-slot>
+
+        <div class="space-y-4 py-3">
+            <div class="grid grid-cols-2 gap-4">
+                <!-- TPH Number Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Nomor TPH
+                    </label>
+                    <input
+                        wire:model="editTphNumber"
+                        type="number"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        placeholder="Masukkan nomor TPH" />
+                </div>
+
+                <!-- Ancak Number Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Nomor Ancak
+                    </label>
+                    <input
+                        wire:model="editAncakNumber"
+                        type="number"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        placeholder="Masukkan nomor ancak" />
+                </div>
+            </div>
+        </div>
+
+        <x-slot name="footerActions">
+            <x-filament::button wire:click="confirmDeleteTPH" wire:loading.attr="disabled" class="bg-red-500 hover:bg-red-600">
+                <span wire:loading.remove>Hapus</span>
+                <span wire:loading>Hapus...</span>
+            </x-filament::button>
+            <x-filament::button wire:click="updateTPH" wire:loading.attr="disabled">
+                <span wire:loading.remove>Simpan Perubahan</span>
+                <span wire:loading>Menyimpan...</span>
+            </x-filament::button>
+
+        </x-slot>
+    </x-filament::modal>
+
+    <x-filament::modal id="confirmdelete" width="md">
+        <x-slot name="heading">
+            Konfirmasi Hapus
+        </x-slot>
+        <div class="space-y-4 py-3">
+            <p>Apakah Anda yakin ingin menghapus data TPH ini?</p>
+        </div>
+        <x-slot name="footerActions">
+            <x-filament::button
+                wire:click="$dispatch('close-modal', { id: 'confirmdelete' })"
+                class="mr-2">
+                Batal
+            </x-filament::button>
+            <x-filament::button
+                wire:click="deleteTPH"
+                wire:loading.attr="disabled"
+                class="bg-red-500 hover:bg-red-600">
+                <span wire:loading.remove>Hapus</span>
+                <span wire:loading>Menghapus...</span>
+            </x-filament::button>
+        </x-slot>
+    </x-filament::modal>
+
     <!-- Header with Breadcrumb -->
     <div class="bg-white shadow-sm rounded-lg p-6">
         <div class="flex items-center space-x-2 text-gray-600">
@@ -143,7 +212,7 @@
     </div>
 
     <!-- Map Container with Loading State -->
-    <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+    <div class="bg-white shadow-sm rounded-lg overflow-hidden" style="position: relative; z-index: 0;">
         <div class="p-4 border-b border-gray-200">
             <h3 class="text-lg font-medium text-gray-900">Peta Lokasi</h3>
         </div>
@@ -253,16 +322,6 @@
             }
 
             if (value && Array.isArray(value.features) && value.features.length > 0) {
-                // Comment out marker cluster initialization
-                // tphLayer = L.markerClusterGroup({
-                //     chunkedLoading: true,
-                //     maxClusterRadius: 50,
-                //     spiderfyOnMaxZoom: true,
-                //     showCoverageOnHover: false,
-                //     zoomToBoundsOnClick: true
-                // });
-
-                // Instead, use a regular feature group
                 tphLayer = L.featureGroup();
 
                 L.geoJSON(value, {
@@ -278,19 +337,29 @@
                         });
                     },
                     onEachFeature: function(feature, layer) {
-                        const popupContent = `
+                        // Get user privileges from Livewire component
+                        const hasEditPrivilege = @this.user;
+
+                        let popupContent = `
                             <strong>TPH Info</strong><br>
                             Blok: ${feature.properties.blok}<br>
                             Ancak: ${feature.properties.ancak}<br>
                             TPH: ${feature.properties.tph}<br>
                             Petugas: ${feature.properties.user_input}<br>
                             Tanggal: ${feature.properties.tanggal}<br>
-                            <button wire:click="editTPH(${feature.properties.id})"
-                                style="background: #4CAF50; color: white; padding: 4px 8px; 
-                                border: none; border-radius: 4px; cursor: pointer; margin-top: 8px;">
-                                Edit TPH
-                            </button>
                         `;
+
+                        // Only add edit button if user has privileges
+                        if (hasEditPrivilege) {
+                            popupContent += `
+                                <button wire:click="editTPH(${feature.properties.id})"
+                                    style="background: #4CAF50; color: white; padding: 4px 8px; 
+                                    border: none; border-radius: 4px; cursor: pointer; margin-top: 8px;">
+                                    Edit TPH
+                                </button>
+                            `;
+                        }
+
                         layer.bindPopup(popupContent);
                     }
                 }).addTo(tphLayer);
