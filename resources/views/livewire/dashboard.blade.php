@@ -325,10 +325,20 @@
                 tphLayer = L.featureGroup();
 
                 L.geoJSON(value, {
+                    filter: function(feature) {
+                        // Skip features with null/invalid coordinates
+                        const coords = feature.geometry?.coordinates;
+                        return coords &&
+                            Array.isArray(coords) &&
+                            coords.length === 2 &&
+                            coords[0] !== null &&
+                            coords[1] !== null;
+                    },
                     pointToLayer: function(feature, latlng) {
+                        const markerColor = feature.properties.status === 1 ? "#4CAF50" : "#FF0000";
                         return L.circleMarker(latlng, {
                             radius: 8,
-                            fillColor: "#ff0000",
+                            fillColor: markerColor,
                             color: "#000",
                             weight: 1,
                             opacity: 1,
@@ -340,13 +350,17 @@
                         // Get user privileges from Livewire component
                         const hasEditPrivilege = @this.user;
 
+                        let statusText = feature.properties.status === 1 ?
+                            '<span class="text-green-600">Terverifikasi</span>' :
+                            '<span class="text-red-600">Belum Terverifikasi</span>';
+
                         let popupContent = `
                             <strong>TPH Info</strong><br>
                             Blok: ${feature.properties.blok}<br>
                             Ancak: ${feature.properties.ancak}<br>
                             TPH: ${feature.properties.tph}<br>
-                            Petugas: ${feature.properties.user_input}<br>
-                            Tanggal: ${feature.properties.tanggal}<br>
+                            Estate: ${feature.properties.estate}<br>
+                            Afdeling: ${feature.properties.afdeling}<br>
                         `;
 
                         // Only add edit button if user has privileges
@@ -528,6 +542,10 @@
                             <p style="margin:0 0 10px 0">${legendInfo.description}</p>
                             <p style="margin:0 0 10px 0">${legendInfo.tanggal}</p>
                             <p style="margin:5px 0"><strong>Total TPH:</strong> ${legendInfo.Total_tph}</p>
+                            <p style="margin:5px 0">
+                                <span style="color:#4CAF50">●</span> Terverifikasi: ${legendInfo.verified_tph}<br>
+                                <span style="color:#FF0000">●</span> Belum Terverifikasi: ${legendInfo.unverified_tph}
+                            </p>
                         </div>`;
 
                     html += '<div style="border-top:1px solid #ccc;padding-top:10px">';

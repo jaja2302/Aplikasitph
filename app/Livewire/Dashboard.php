@@ -157,14 +157,19 @@ class Dashboard extends Component
     {
         $blok = $data->pluck('blok')->map(function ($blok) {
             $parts = explode('-', $blok);
-            return end($parts); // Get last item after explode
+            return end($parts);
         })->unique()->values()->toArray();
+
+        $verifiedCount = $data->where('status', 1)->count();
+        $unverifiedCount = $data->where('status', 0)->count();
+
         $legendInfo = [
             'title' => 'Legend',
             'description' => 'Detail data TPH',
             'Total_tph' => count($data),
+            'verified_tph' => $verifiedCount,
+            'unverified_tph' => $unverifiedCount,
             'blok_tersidak' => $blok,
-            // 'tanggal' => Carbon::parse($this->selectedDate)->locale('id')->translatedFormat('l, d F Y'),
             'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
         ];
 
@@ -180,23 +185,21 @@ class Dashboard extends Component
 
         $est = Estate::find($this->selectedEstate)->est;
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
-        $key = $est . '-' . $afd;
+        $afdKey = 'AFD' . '-' . $afd;
 
+        $tphPoints = KoordinatatTph::where('dept_abbr', $est)
+            ->where('lat', '!=', null)
+            ->where('lon', '!=', null)
+            ->where('lat', '!=', '-')
+            ->where('lon', '!=', '-')
+            ->where('divisi_abbr', $afdKey);
 
-        // Add this condition if a specific blok is selected
-        $tphPoints = KoordinatatTph::where('afdeling', $key);
-
-        // Add this condition if a specific blok is selected
         if ($this->selectedBlok) {
             $blokNama = Blok::find($this->selectedBlok)->nama;
             $tphPoints->where('blok', 'LIKE', '%' . $blokNama . '%');
         }
 
-        // Retrieve the data
         $tphPoints = $tphPoints->get();
-
-        // $tphPoints = $tphPoints->whereDate('datetime', $this->selectedDate)
-
 
         $this->generateLegendInfo($tphPoints);
 
@@ -209,14 +212,11 @@ class Dashboard extends Component
                 ],
                 'properties' => [
                     'id' => $point->id,
-                    'tanggal' => Carbon::parse($point->datetime)->locale('id')->translatedFormat('l, d F Y \P\u\k\u\l H:i'),
-                    'datetime' => $point->datetime,
-                    'user_input' => $point->user_input,
-                    'estate' => $point->estate,
-                    'afdeling' => $point->afdeling,
-                    'blok' => $point->blok,
+                    'estate' => $point->dept_abbr,
+                    'afdeling' => $point->divisi_abbr,
+                    'blok' => $point->blok_kode,
                     'ancak' => $point->ancak,
-                    'tph' => $point->tph
+                    'tph' => $point->nomor,
                 ]
             ];
         })->toArray();
@@ -246,14 +246,15 @@ class Dashboard extends Component
 
         $est = Estate::find($this->selectedEstate)->est;
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
-        $key = $est . '-' . $afd;
+        $afdKey = 'AFD' . '-' . $afd;
 
-        $blokTersidak = KoordinatatTph::where('afdeling', $key)
-            ->pluck('blok')
-            ->map(function ($blok) {
-                $parts = explode('-', $blok);
-                return end($parts);
-            })
+        $blokTersidak = KoordinatatTph::where('divisi_abbr', $afdKey)
+            ->where('lat', '!=', null)
+            ->where('lon', '!=', null)
+            ->where('lat', '!=', '-')
+            ->where('lon', '!=', '-')
+            ->where('dept_abbr', $est)
+            ->pluck('blok_kode')
             ->unique()
             ->values()
             ->toArray();
