@@ -155,13 +155,18 @@ class Dashboard extends Component
 
     private function generateLegendInfo($data)
     {
-        $blok = $data->pluck('blok_kode')->unique()->values()->toArray();
+        $blok_tersidak = $data->pluck('blok_kode')->unique()->values()->toArray();
         $estate = $data->pluck('dept_abbr')->unique()->values()->toArray();
         $afdeling = $data->pluck('divisi_abbr')->unique()->values()->toArray();
         $verifiedCount = $data->count();
         $data_unverified = $this->getBaseTPHQuery($estate, $afdeling, 'all');
         $unverifiedCount = $data_unverified->count();
+
+        // Dapatkan semua blok yang belum terverifikasi
         $unveridblok = $data_unverified->pluck('blok_kode')->unique()->values()->toArray();
+
+        // Hapus blok yang sudah tersidak dari unveridblok menggunakan array_diff
+        $unveridblok = array_values(array_diff($unveridblok, $blok_tersidak));
 
         // Hitung persentase progress
         $progressPercentage = $unverifiedCount > 0
@@ -176,7 +181,7 @@ class Dashboard extends Component
             'unverified_tph' => $unverifiedCount,
             'progress_percentage' => $progressPercentage,
             'blok_unverified' => $unveridblok,
-            'blok_tersidak' => $blok,
+            'blok_tersidak' => $blok_tersidak,
             'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
         ];
 

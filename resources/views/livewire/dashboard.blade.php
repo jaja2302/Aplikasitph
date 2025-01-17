@@ -216,6 +216,7 @@
         <div class="p-4 border-b border-gray-200">
             <h3 class="text-lg font-medium text-gray-900">Peta Lokasi</h3>
         </div>
+
         <div class="relative">
             <div wire:ignore class="h-[600px]" id="map"></div>
 
@@ -226,14 +227,94 @@
                     <span class="mt-2 text-sm text-gray-600">Memuat data...</span>
                 </div>
             </div>
+
+
         </div>
     </div>
+    @if($legendInfo)
+    <!-- Legend Card -->
+    <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Basic Info Section -->
+            <div class="space-y-4">
+                <h3 class="text-lg font-medium text-gray-900">{{ $legendInfo['title'] }}</h3>
+                <p class="text-gray-600">{{ $legendInfo['description'] }}</p>
 
+                <div class="space-y-2">
+                    <p class="font-medium">Total TPH: {{ $legendInfo['Total_tph'] }}</p>
+                    <div class="flex items-center space-x-2">
+                        <span class="flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-green-600 mr-2"></span>
+                            Terverifikasi: {{ $legendInfo['verified_tph'] }}
+                        </span>
+                        <span class="flex items-center">
+                            <span class="w-3 h-3 rounded-full bg-red-600 mr-2"></span>
+                            Belum: {{ $legendInfo['unverified_tph'] }}
+                        </span>
+                    </div>
+                    <div class="relative pt-1">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-semibold inline-block text-green-600">
+                                    Progress: {{ $legendInfo['progress_percentage'] }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                            <div style="width: {{ $legendInfo['progress_percentage'] }}%"
+                                class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-600">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Petugas & Blok Tersidak Section -->
+            <div class="space-y-4">
+                @if(isset($legendInfo['user_input']) && count($legendInfo['user_input']) > 0)
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Petugas:</h4>
+                    <ul class="list-disc pl-5 space-y-1">
+                        @foreach($legendInfo['user_input'] as $user)
+                        <li class="text-gray-600">{{ $user }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
 
+                @if(isset($legendInfo['blok_tersidak']) && count($legendInfo['blok_tersidak']) > 0)
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Blok Tersidak:</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        @foreach($legendInfo['blok_tersidak'] as $blok)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            {{ $blok }}
+                        </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            <!-- Blok Belum Tersidak Section -->
+            <div>
+                @if(isset($legendInfo['blok_unverified']) && count($legendInfo['blok_unverified']) > 0)
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Blok Belum Tersidak:</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        @foreach($legendInfo['blok_unverified'] as $blok)
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            {{ $blok }}
+                        </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
-
-
 @push('scripts')
 <script type="module">
     document.addEventListener('livewire:initialized', () => {
@@ -497,124 +578,6 @@
             updateTPHMarkers(value);
         });
 
-
-
-        // Custom Control untuk Legend Info
-        L.Control.LegendInfo = L.Control.extend({
-            onAdd: function(map) {
-                const container = L.DomUtil.create('div', 'leaflet-control legend-info');
-                container.style.backgroundColor = 'white';
-                container.style.padding = '10px';
-                container.style.borderRadius = '5px';
-                container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
-                container.style.minWidth = '200px';
-                container.style.maxWidth = '300px';
-                container.style.maxHeight = '70vh';
-
-                // Add toggle button
-                const toggleBtn = L.DomUtil.create('button', '', container);
-                toggleBtn.innerHTML = '▼';
-                toggleBtn.style.float = 'right';
-                toggleBtn.style.border = 'none';
-                toggleBtn.style.background = 'none';
-                toggleBtn.style.cursor = 'pointer';
-                toggleBtn.style.padding = '0 5px';
-
-                // Create content container with scroll
-                const contentDiv = L.DomUtil.create('div', '', container);
-                contentDiv.style.display = 'block';
-                contentDiv.style.maxHeight = 'calc(70vh - 40px)';
-                contentDiv.style.overflowY = 'auto';
-
-                // Toggle functionality
-                let isVisible = true;
-                toggleBtn.onclick = function() {
-                    isVisible = !isVisible;
-                    contentDiv.style.display = isVisible ? 'block' : 'none';
-                    toggleBtn.innerHTML = isVisible ? '▼' : '▲';
-                };
-
-                // Update function for legend content
-                this.update = function(legendInfo) {
-                    let html = `
-                        <div class="legend-header" style="position:sticky;top:0;background:white;padding-bottom:10px;z-index:1">
-                            <h4 style="margin:0 0 10px 0;font-weight:bold">${legendInfo.title}</h4>
-                            <p style="margin:0 0 10px 0">${legendInfo.description}</p>
-
-                            <p style="margin:5px 0"><strong>Total TPH:</strong> ${legendInfo.Total_tph}</p>
-                            <p style="margin:5px 0">
-                                <span style="color:#4CAF50">●</span> Terverifikasi: ${legendInfo.verified_tph}<br>
-                                <span style="color:#FF0000">●</span> Belum Terverifikasi: ${legendInfo.unverified_tph}
-                            </p>
-                        </div>`;
-
-                    html += '<div style="border-top:1px solid #ccc;padding-top:10px">';
-
-                    if (legendInfo.user_input && legendInfo.user_input.length > 0) {
-                        html += '<div style="margin-bottom:10px">';
-                        html += '<p style="margin:5px 0"><strong>Petugas:</strong></p>';
-                        html += '<ul style="margin:5px 0;padding-left:20px;max-height:150px;overflow-y:auto">';
-                        legendInfo.user_input.forEach(user => {
-                            html += `<li>${user}</li>`;
-                        });
-                        html += '</ul></div>';
-                    }
-
-                    if (legendInfo.blok_tersidak && legendInfo.blok_tersidak.length > 0) {
-                        html += '<div>';
-                        html += '<p style="margin:5px 0"><strong>Blok Tersidak:</strong></p>';
-                        html += '<ul style="margin:5px 0;padding-left:20px;max-height:200px;overflow-y:auto">';
-                        legendInfo.blok_tersidak.forEach(blok => {
-                            html += `<li>${blok}</li>`;
-                        });
-
-                        html += '</ul></div>';
-                    }
-                    // html += '<div>';
-                    // html += '<p style="margin:5px 0"><strong>Blok Belum Terverifikasi:</strong></p>';
-                    // html += '<ul style="margin:5px 0;padding-left:20px;max-height:200px;overflow-y:auto">';
-                    // legendInfo.blok_unverified.forEach(blok => {
-                    //     html += `<li>${blok}</li>`;
-                    // });
-                    // html += '</ul></div>';
-
-                    // html += '</div>';
-                    contentDiv.innerHTML = html;
-                };
-
-                // Prevent map click events
-                L.DomEvent.disableClickPropagation(container);
-                L.DomEvent.disableScrollPropagation(container);
-
-                return container;
-            }
-        });
-
-        // Create legend control
-        const legendControl = new L.Control.LegendInfo({
-            position: 'bottomright'
-        });
-        map.addControl(legendControl);
-
-        // Watch for changes in legendInfo
-        @this.watch('legendInfo', value => {
-            if (value) {
-                legendControl.update(value);
-            }
-        });
-
-        // Add CSS to your styles
-        const style = document.createElement('style');
-        style.textContent = `
-            .blok-label {
-                background: none;
-                border: none;
-            }
-            .blok-label div {
-                text-align: center;
-            }
-        `;
-        document.head.appendChild(style);
         // Add Livewire event listeners for loader
         Livewire.on('show-loader', () => {
             window.showLoader();
