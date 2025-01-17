@@ -540,7 +540,7 @@
                         <div class="legend-header" style="position:sticky;top:0;background:white;padding-bottom:10px;z-index:1">
                             <h4 style="margin:0 0 10px 0;font-weight:bold">${legendInfo.title}</h4>
                             <p style="margin:0 0 10px 0">${legendInfo.description}</p>
-                            <p style="margin:0 0 10px 0">${legendInfo.tanggal}</p>
+
                             <p style="margin:5px 0"><strong>Total TPH:</strong> ${legendInfo.Total_tph}</p>
                             <p style="margin:5px 0">
                                 <span style="color:#4CAF50">●</span> Terverifikasi: ${legendInfo.verified_tph}<br>
@@ -567,10 +567,18 @@
                         legendInfo.blok_tersidak.forEach(blok => {
                             html += `<li>${blok}</li>`;
                         });
+
                         html += '</ul></div>';
                     }
+                    // html += '<div>';
+                    // html += '<p style="margin:5px 0"><strong>Blok Belum Terverifikasi:</strong></p>';
+                    // html += '<ul style="margin:5px 0;padding-left:20px;max-height:200px;overflow-y:auto">';
+                    // legendInfo.blok_unverified.forEach(blok => {
+                    //     html += `<li>${blok}</li>`;
+                    // });
+                    // html += '</ul></div>';
 
-                    html += '</div>';
+                    // html += '</div>';
                     contentDiv.innerHTML = html;
                 };
 

@@ -155,25 +155,79 @@ class Dashboard extends Component
 
     private function generateLegendInfo($data)
     {
-        $blok = $data->pluck('blok')->map(function ($blok) {
-            $parts = explode('-', $blok);
-            return end($parts);
-        })->unique()->values()->toArray();
+        $blok = $data->pluck('blok_kode')->unique()->values()->toArray();
+        $estate = $data->pluck('dept_abbr')->unique()->values()->toArray();
+        $afdeling = $data->pluck('divisi_abbr')->unique()->values()->toArray();
+        $verifiedCount = $data->count();
+        $data_unverified = $this->getBaseTPHQuery($estate, $afdeling, 'all');
+        $unverifiedCount = $data_unverified->count();
+        $unveridblok = $data_unverified->pluck('blok_kode')->unique()->values()->toArray();
 
-        $verifiedCount = $data->where('status', 1)->count();
-        $unverifiedCount = $data->where('status', 0)->count();
+        // Hitung persentase progress
+        $progressPercentage = $unverifiedCount > 0
+            ? round(($verifiedCount / $unverifiedCount) * 100, 1)
+            : 0;
 
         $legendInfo = [
             'title' => 'Legend',
             'description' => 'Detail data TPH',
-            'Total_tph' => count($data),
+            'Total_tph' => $unverifiedCount,
             'verified_tph' => $verifiedCount,
             'unverified_tph' => $unverifiedCount,
+            'progress_percentage' => $progressPercentage,
+            'blok_unverified' => $unveridblok,
             'blok_tersidak' => $blok,
             'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
         ];
 
         $this->legendInfo = $legendInfo;
+    }
+
+    /**
+     * Get base query for TPH points with valid coordinates
+     * 
+     * @param string $est Estate code
+     * @param string $afdKey Afdeling key
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function getBaseTPHQuery($est, $afdKey, $type)
+    {
+        switch ($type) {
+            case 'all':
+                return KoordinatatTph::where('dept_abbr', $est)
+                    ->where('divisi_abbr', $afdKey);
+            case 'valid':
+                return KoordinatatTph::where('dept_abbr', $est)
+                    ->where('lat', '!=', null)
+                    ->where('lon', '!=', null)
+                    ->where('lat', '!=', '-')
+                    ->where('lon', '!=', '-')
+                    ->where('divisi_abbr', $afdKey);
+        }
+    }
+    /**
+     * Convert TPH point to GeoJSON feature
+     * 
+     * @param KoordinatatTph $point
+     * @return array
+     */
+    private function tphToGeoJsonFeature($point)
+    {
+        return [
+            'type' => 'Feature',
+            'geometry' => [
+                'type' => 'Point',
+                'coordinates' => [$point->lon, $point->lat]
+            ],
+            'properties' => [
+                'id' => $point->id,
+                'estate' => $point->dept_abbr,
+                'afdeling' => $point->divisi_abbr,
+                'blok' => $point->blok_kode,
+                'ancak' => $point->ancak,
+                'tph' => $point->nomor,
+            ]
+        ];
     }
 
     private function updateTPHCoordinates()
@@ -187,44 +241,37 @@ class Dashboard extends Component
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $afdKey = 'AFD' . '-' . $afd;
 
-        $tphPoints = KoordinatatTph::where('dept_abbr', $est)
-            ->where('lat', '!=', null)
-            ->where('lon', '!=', null)
-            ->where('lat', '!=', '-')
-            ->where('lon', '!=', '-')
-            ->where('divisi_abbr', $afdKey);
+        $tphQuery = $this->getBaseTPHQuery($est, $afdKey, 'valid');
 
         if ($this->selectedBlok) {
             $blokNama = Blok::find($this->selectedBlok)->nama;
-            $tphPoints->where('blok', 'LIKE', '%' . $blokNama . '%');
+            $tphQuery->where('blok', 'LIKE', '%' . $blokNama . '%');
         }
 
-        $tphPoints = $tphPoints->get();
-
-        $this->generateLegendInfo($tphPoints);
-
+        $tphPoints = $tphQuery->get();
         $features = $tphPoints->map(function ($point) {
-            return [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [$point->lon, $point->lat]
-                ],
-                'properties' => [
-                    'id' => $point->id,
-                    'estate' => $point->dept_abbr,
-                    'afdeling' => $point->divisi_abbr,
-                    'blok' => $point->blok_kode,
-                    'ancak' => $point->ancak,
-                    'tph' => $point->nomor,
-                ]
-            ];
+            return $this->tphToGeoJsonFeature($point);
         })->toArray();
 
+        // dd($features);
+        $this->generateLegendInfo($tphPoints);
         $this->coordinatesTPH = [
             'type' => 'FeatureCollection',
             'features' => $features
         ];
+    }
+
+
+    private function getBlokTersidak($est, $afdKey)
+    {
+        return $this->getBaseTPHQuery($est, $afdKey, 'valid')
+            ->pluck('blok_kode')
+            ->map(function ($blok) {
+                return $this->normalizeBlockCode($blok);
+            })
+            ->unique()
+            ->values()
+            ->toArray();
     }
 
     private function generateMapPlotBlok()
@@ -236,7 +283,6 @@ class Dashboard extends Component
 
         $query = Blok::where('afdeling', $this->selectedAfdeling);
 
-        // Add filter for specific blok if selected
         if ($this->selectedBlok) {
             $selectedBlokNama = Blok::find($this->selectedBlok)->nama;
             $query->where('nama', $selectedBlokNama);
@@ -248,16 +294,7 @@ class Dashboard extends Component
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $afdKey = 'AFD' . '-' . $afd;
 
-        $blokTersidak = KoordinatatTph::where('divisi_abbr', $afdKey)
-            ->where('lat', '!=', null)
-            ->where('lon', '!=', null)
-            ->where('lat', '!=', '-')
-            ->where('lon', '!=', '-')
-            ->where('dept_abbr', $est)
-            ->pluck('blok_kode')
-            ->unique()
-            ->values()
-            ->toArray();
+        $blokTersidak = $this->getBlokTersidak($est, $afdKey);
 
         $features = $bloks->map(function ($blokGroup, $nama) use ($blokTersidak) {
             $coordinates = $blokGroup->map(function ($blok) {
@@ -279,7 +316,7 @@ class Dashboard extends Component
                     'sph' => $firstBlok->sph,
                     'bjr' => $firstBlok->bjr,
                     'afdeling' => $firstBlok->afdeling,
-                    'tersidak' => in_array($nama, $blokTersidak)
+                    'tersidak' => in_array($this->normalizeBlockCode($nama), $blokTersidak)
                 ]
             ];
         })->values()->toArray();
@@ -440,6 +477,23 @@ class Dashboard extends Component
                 ->body('Gagal menghapus data TPH.')
                 ->send();
         }
+    }
+
+    /**
+     * Normalize block codes for comparison by removing common prefixes and suffixes
+     * 
+     * @param string $blockCode The block code to normalize
+     * @return string Normalized block code
+     */
+    private function normalizeBlockCode($blockCode)
+    {
+        if (!$blockCode) return '';
+
+        // Convert to uppercase first
+        $blockCode = strtoupper($blockCode);
+
+        // Remove any single letter suffix (A, B, etc) and leading 'C'
+        return preg_replace('/[A-Z]$/', '', ltrim($blockCode, 'C'));
     }
 
     public function render()
