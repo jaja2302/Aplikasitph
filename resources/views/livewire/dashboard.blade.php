@@ -369,6 +369,25 @@
         </div>
     </div>
     @endif
+
+    <!-- Tambahkan control search setelah opacity control -->
+    <div class="leaflet-control search-control" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+        <div class="bg-white p-2 rounded-lg shadow-lg">
+            <div class="flex items-center space-x-2">
+                <input type="text"
+                    id="searchBlok"
+                    placeholder="Cari Blok..."
+                    class="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    style="min-width: 200px;">
+                <button id="searchButton"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors">
+                    Cari
+                </button>
+            </div>
+            <div id="searchResults" class="mt-2 max-h-48 overflow-y-auto hidden">
+            </div>
+        </div>
+    </div>
 </div>
 @push('scripts')
 <script type="module">
@@ -656,6 +675,113 @@
                 @this.updateTPHDetails(id, ancak, tph);
             }
         }
+
+        // Tambahkan fungsi search
+        function initializeSearch() {
+            const searchInput = document.getElementById('searchBlok');
+            const searchButton = document.getElementById('searchButton');
+            const searchResults = document.getElementById('searchResults');
+            let markers = [];
+
+            function clearMarkers() {
+                markers.forEach(marker => map.removeLayer(marker));
+                markers = [];
+            }
+
+            function highlightTPH(coordinates, blok, tphNumber) {
+                clearMarkers();
+
+                // Buat marker khusus untuk hasil pencarian
+                const marker = L.circleMarker([coordinates[1], coordinates[0]], {
+                    radius: 12,
+                    fillColor: '#FFD700',
+                    color: '#000',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                });
+
+                marker.bindPopup(`<b>Blok: ${blok}</b><br>TPH: ${tphNumber}`).openPopup();
+                marker.addTo(map);
+                markers.push(marker);
+
+                // Zoom ke lokasi TPH
+                map.setView([coordinates[1], coordinates[0]], 18);
+            }
+
+            function performSearch() {
+                const searchTerm = searchInput.value.trim();
+                if (!searchTerm) return;
+
+                @this.searchTPHByBlok(searchTerm).then(results => {
+                    searchResults.innerHTML = '';
+                    searchResults.classList.remove('hidden');
+
+                    if (results.length === 0) {
+                        searchResults.innerHTML = `
+                            <div class="p-2 text-sm text-gray-600">
+                                Tidak ada hasil ditemukan
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    results.forEach(result => {
+                        const resultDiv = document.createElement('div');
+                        resultDiv.className = 'p-2 hover:bg-gray-100 cursor-pointer text-sm';
+                        resultDiv.innerHTML = `Blok ${result.blok} - TPH ${result.tph}`;
+
+                        resultDiv.addEventListener('click', () => {
+                            highlightTPH(result.coordinates, result.blok, result.tph);
+                            searchResults.classList.add('hidden');
+                        });
+
+                        searchResults.appendChild(resultDiv);
+                    });
+                });
+            }
+
+            searchButton.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+
+            // Sembunyikan hasil pencarian ketika klik di luar
+            document.addEventListener('click', (e) => {
+                if (!searchResults.contains(e.target) && e.target !== searchInput) {
+                    searchResults.classList.add('hidden');
+                }
+            });
+        }
+
+        // Panggil fungsi initializeSearch setelah map diinisialisasi
+        document.addEventListener('livewire:initialized', () => {
+            // ... kode map initialization yang sudah ada ...
+
+            initializeSearch();
+        });
     });
 </script>
+
+<style>
+    .search-control {
+        background: transparent;
+        border: none;
+    }
+
+    #searchResults {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-top: 0.5rem;
+    }
+
+    #searchResults div {
+        transition: background-color 0.2s;
+    }
+
+    #searchResults div:hover {
+        background-color: #f3f4f6;
+    }
+</style>
 @endpush

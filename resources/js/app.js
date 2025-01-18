@@ -11,6 +11,8 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import "flyonui/flyonui"
+import 'leaflet-search/dist/leaflet-search.min.css';
+import 'leaflet-search';
 // Fix untuk icon Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
