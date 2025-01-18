@@ -406,7 +406,7 @@
                             <div class="text-xs text-gray-600 break-words">
                                 <span class="font-medium">TPH:</span>
                                 <div class="flex flex-wrap gap-1">
-                                    @foreach(explode(',', $tphDetail->verified_tph_numbers) as $tphNumber)
+                                    @foreach(collect(explode(',', $tphDetail->verified_tph_numbers))->sort() as $tphNumber)
                                     <button
                                         wire:click="focusOnTPH('{{ $blok }}', {{ $tphNumber }})"
                                         class="px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors cursor-pointer">
@@ -442,7 +442,7 @@
                             <div class="text-xs text-gray-600 break-words">
                                 <span class="font-medium">TPH:</span>
                                 <div class="flex flex-wrap gap-1">
-                                    @foreach(explode(',', $tphDetail->unverified_tph_numbers) as $tphNumber)
+                                    @foreach(collect(explode(',', $tphDetail->unverified_tph_numbers))->sort() as $tphNumber)
                                     <span class="px-1.5 py-0.5 bg-red-50 rounded">{{ $tphNumber }}</span>
                                     @endforeach
                                 </div>
