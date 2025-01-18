@@ -48,6 +48,27 @@
 
     <!-- Main Content -->
     <div class="min-h-screen bg-gray-50">
+        @auth
+        <div class="p-4">
+            <div class="bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div>
+                            <p class="text-gray-600">Selamat datang,</p>
+                            <p class="font-semibold text-gray-800">{{ Auth::user()->nama_lengkap }}</p>
+                        </div>
+                    </div>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit"
+                            class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endauth
         {{ $slot }}
     </div>
 

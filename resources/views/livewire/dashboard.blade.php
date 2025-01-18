@@ -79,6 +79,80 @@
             <span class="text-sm font-medium text-green-600">{{ $title }}</span>
         </div>
         <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ $title }}</h1>
+
+        <!-- User Guide Section with Alpine.js -->
+        <div x-data="{ open: false }" class="mt-4">
+            <button @click="open = !open" class="w-full flex items-center justify-between p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h2 class="text-lg font-semibold text-blue-800">Panduan Penggunaan</h2>
+                </div>
+                <svg :class="open ? 'rotate-180 transform' : ''" class="w-5 h-5 text-blue-600 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <div x-show="open"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                x-transition:enter-end="opacity-100 transform translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 transform translate-y-0"
+                x-transition:leave-end="opacity-0 transform -translate-y-2"
+                class="bg-blue-50 rounded-b-lg p-4 border-t border-blue-100">
+                <div class="space-y-3 text-sm text-blue-700">
+                    <div>
+                        <h3 class="font-medium mb-1">🎯 Cara Memulai:</h3>
+                        <ol class="list-decimal list-inside ml-2 space-y-1">
+                            <li>Pilih Regional, Wilayah, Estate, dan Afdeling secara berurutan pada panel filter</li>
+                            <li>Anda dapat memilih Blok spesifik untuk melihat detail TPH pada blok tersebut</li>
+                        </ol>
+                    </div>
+
+                    <div>
+                        <h3 class="font-medium mb-1">🗺️ Fitur Peta:</h3>
+                        <ul class="list-disc list-inside ml-2 space-y-1">
+                            <li>Gunakan slider Opacity untuk mengatur transparansi layer blok</li>
+                            <li>Klik pada titik TPH untuk melihat detail informasi</li>
+                            <li>Pilih antara tampilan Satellite atau OpenStreetMap di panel kanan atas</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="font-medium mb-1">📊 Detail Data TPH:</h3>
+                        <ul class="list-disc list-inside ml-2 space-y-1">
+                            <li>Tombol Reset View mengembalikan tampilan ke seluruh area afdeling setelah memilih Nomor tph</li>
+                            <li>Titik Hijau: TPH terverifikasi</li>
+                            <li>Titik Merah: TPH belum terverifikasi</li>
+                            <li>Blok Biru: Blok yang sudah memiliki TPH terverifikasi</li>
+                            <li>Blok Merah: Blok yang belum memiliki TPH terverifikasi</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="font-medium mb-1">🔍 Detail TPH:</h3>
+                        <ul class="list-disc list-inside ml-2 space-y-1">
+                            <li>Panel detail menampilkan status verifikasi per blok</li>
+                            <li>Klik nomor TPH pada panel untuk menemukan lokasi TPH spesifik</li>
+                            <li>Persentase progress menunjukkan kemajuan verifikasi TPH</li>
+                        </ul>
+                    </div>
+
+                    @if($user)
+                    <div>
+                        <h3 class="font-medium mb-1">✏️ Fitur Edit (Admin):</h3>
+                        <ul class="list-disc list-inside ml-2 space-y-1">
+                            <li>Klik titik TPH untuk membuka popup informasi</li>
+                            <li>Gunakan tombol Edit TPH untuk mengubah nomor TPH dan ancak</li>
+                            <li>Perubahan akan langsung tersimpan setelah dikonfirmasi</li>
+                        </ul>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Filter Panel -->
@@ -305,6 +379,16 @@
                 <!-- Blok Tersidak -->
                 <div class="bg-green-50 rounded-lg p-4">
                     <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Tersidak</h4>
+                    <!-- Di bagian atas legend, tambahkan tombol reset -->
+
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Klik Nomor TPH untuk melihat detail data TPH di peta</h3>
+                        <button
+                            wire:click="resetMapView"
+                            class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
+                            Reset View
+                        </button>
+                    </div>
                     <div class="grid grid-cols-1 gap-3">
                         @foreach($legendInfo['blok_tersidak'] as $blok)
                         @php
@@ -323,7 +407,11 @@
                                 <span class="font-medium">TPH:</span>
                                 <div class="flex flex-wrap gap-1">
                                     @foreach(explode(',', $tphDetail->verified_tph_numbers) as $tphNumber)
-                                    <span class="px-1.5 py-0.5 bg-green-50 rounded">{{ $tphNumber }}</span>
+                                    <button
+                                        wire:click="focusOnTPH('{{ $blok }}', {{ $tphNumber }})"
+                                        class="px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors cursor-pointer">
+                                        {{ $tphNumber }}
+                                    </button>
                                     @endforeach
                                 </div>
                             </div>
@@ -370,24 +458,7 @@
     </div>
     @endif
 
-    <!-- Tambahkan control search setelah opacity control -->
-    <div class="leaflet-control search-control" style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
-        <div class="bg-white p-2 rounded-lg shadow-lg">
-            <div class="flex items-center space-x-2">
-                <input type="text"
-                    id="searchBlok"
-                    placeholder="Cari Blok..."
-                    class="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    style="min-width: 200px;">
-                <button id="searchButton"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors">
-                    Cari
-                </button>
-            </div>
-            <div id="searchResults" class="mt-2 max-h-48 overflow-y-auto hidden">
-            </div>
-        </div>
-    </div>
+
 </div>
 @push('scripts')
 <script type="module">
@@ -759,6 +830,101 @@
             // ... kode map initialization yang sudah ada ...
 
             initializeSearch();
+        });
+
+        // Add this inside your existing script tag, within the Livewire initialized event listener
+        Livewire.on('focus-tph', ({
+            coordinates
+        }) => {
+            // Clear any existing highlight markers
+            if (window.highlightMarker) {
+                map.removeLayer(window.highlightMarker);
+            }
+
+            // Create a new highlight marker
+            window.highlightMarker = L.circleMarker([coordinates.lat, coordinates.lon], {
+                radius: 12,
+                fillColor: '#FFD700',
+                color: '#000',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+
+            // Add popup to the marker
+            window.highlightMarker.bindPopup(
+                `<b>Blok: ${coordinates.blok}
+                <br>TPH: ${coordinates.tph}
+                <br>Estate: ${coordinates.estate}
+                <br>Afdeling: ${coordinates.afdeling}
+                <br>Status: ${coordinates.status === 1 ? 
+                    '<span class="text-green-600">Terverifikasi</span>' : 
+                    '<span class="text-red-600">Belum Terverifikasi</span>'}
+                </b>`
+            ).openPopup();
+
+            // Add marker to map
+            window.highlightMarker.addTo(map);
+
+            // Center map on the TPH location with zoom
+            map.setView([coordinates.lat, coordinates.lon], 18);
+        });
+
+        // Tambahkan di dalam script yang sudah ada
+        Livewire.on('reset-map-view', ({
+            plotMap,
+            coordinatesTPH
+        }) => {
+            // Remove highlight marker if exists
+            if (window.highlightMarker) {
+                map.removeLayer(window.highlightMarker);
+            }
+
+            // Reset the map view to show all plots and TPH points
+            if (plotLayer && tphLayer) {
+                // Create a feature group containing both layers
+                const allLayers = L.featureGroup([plotLayer, tphLayer]);
+
+                // Fit the map to show all features
+                map.fitBounds(allLayers.getBounds(), {
+                    padding: [50, 50],
+                    maxZoom: 16 // Limit max zoom to keep context
+                });
+            } else if (plotLayer) {
+                map.fitBounds(plotLayer.getBounds(), {
+                    padding: [50, 50],
+                    maxZoom: 16
+                });
+            } else if (tphLayer) {
+                map.fitBounds(tphLayer.getBounds(), {
+                    padding: [50, 50],
+                    maxZoom: 16
+                });
+            }
+
+            // Reset any active filters or highlights
+            if (plotLayer) {
+                plotLayer.eachLayer(function(layer) {
+                    layer.setStyle({
+                        weight: 2,
+                        color: 'white',
+                        dashArray: '3',
+                        fillOpacity: currentFillOpacity
+                    });
+                });
+            }
+
+            // Make sure all TPH points are visible
+            if (tphLayer) {
+                tphLayer.eachLayer(function(layer) {
+                    layer.setStyle({
+                        radius: 8,
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    });
+                });
+            }
         });
     });
 </script>

@@ -270,6 +270,7 @@ class Dashboard extends Component
     {
         if (!$this->selectedEstate || !$this->selectedAfdeling) {
             $this->coordinatesTPH = ['type' => 'FeatureCollection', 'features' => []];
+            $this->legendInfo = [];
             return;
         }
 
@@ -289,14 +290,14 @@ class Dashboard extends Component
             return $this->tphToGeoJsonFeature($point);
         })->toArray();
 
-        // dd($features);
-        $this->generateLegendInfo($tphPoints);
+        // Update legend info terpisah dari fokus TPH
+        $this->updateLegendInfo($tphPoints);
+
         $this->coordinatesTPH = [
             'type' => 'FeatureCollection',
             'features' => $features
         ];
     }
-
 
     private function getBlokTersidak($est, $afdKey)
     {
@@ -534,6 +535,131 @@ class Dashboard extends Component
 
         // Remove any single letter suffix (A, B, etc) and leading 'C'
         return preg_replace('/[A-Z]$/', '', ltrim($blockCode, 'C'));
+    }
+
+    public function focusOnTPH($blok, $tphNumber)
+    {
+        // Find the TPH coordinates
+        if (!$this->selectedEstate || !$this->selectedAfdeling) {
+            return;
+        }
+
+        $est = Estate::find($this->selectedEstate)->est;
+        $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        $afdKey = 'AFD' . '-' . $afd;
+
+        $tph = KoordinatatTph::where('dept_abbr', $est)
+            ->where('divisi_abbr', $afdKey)
+            ->where('blok_kode', $blok)
+            ->where('nomor', $tphNumber)
+            ->where('status', 1)
+            ->first();
+
+        if ($tph) {
+            // Hanya dispatch event untuk fokus ke TPH tanpa memperbarui data
+            $this->dispatch('focus-tph', coordinates: [
+                'lat' => $tph->lat,
+                'lon' => $tph->lon,
+                'blok' => $blok,
+                'tph' => $tphNumber,
+                'estate' => $est,
+                'afdeling' => $afd,
+                'status' => $tph->status
+            ]);
+        }
+    }
+
+    // Tambahkan method baru untuk memisahkan logika update legend
+    private function updateLegendInfo($tphPoints)
+    {
+        if (!$this->selectedEstate || !$this->selectedAfdeling) {
+            $this->legendInfo = [];
+            return;
+        }
+
+        $est = Estate::find($this->selectedEstate)->est;
+        $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        $afdKey = 'AFD' . '-' . $afd;
+
+        // titik tph valid
+        $blok_tersidak = $tphPoints->pluck('blok_kode')->unique()->values()->toArray();
+        $estate = $tphPoints->pluck('dept_abbr')->unique()->values()->toArray();
+        $afdeling = $tphPoints->pluck('divisi_abbr')->unique()->values()->toArray();
+        $verifiedCount = $tphPoints->count();
+
+        // Get unverified data
+        $data_unverified = $this->getBaseTPHQuery($est, $afdKey, 'unverified');
+        $unverifiedCount = $data_unverified->count();
+        $unveridblok = $data_unverified->pluck('blok_kode')->unique()->values()->toArray();
+
+        // get detail tph per blok
+        $tph_per_blok = $this->getBaseTPHQuery($est, $afdKey, 'all')
+            ->select('blok_kode')
+            ->selectRaw('COUNT(*) as total_tph')
+            ->selectRaw("SUM(CASE WHEN lon = '-' THEN 1 ELSE 0 END) as unverified_tph")
+            ->selectRaw("SUM(CASE WHEN lon != '-' THEN 1 ELSE 0 END) as verified_tph")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN lon = '-' THEN nomor ELSE NULL END) as unverified_tph_numbers")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN status = 1 THEN nomor ELSE NULL END) as verified_tph_numbers")
+            ->groupBy('blok_kode')
+            ->get();
+
+        $total_blok_name_count = $tph_per_blok->count();
+        $total_tph = $tph_per_blok->sum('total_tph');
+
+        $progressPercentage = $total_tph > 0
+            ? round(($verifiedCount / $total_tph) * 100, 1)
+            : 0;
+
+        $this->legendInfo = [
+            'title' => 'Legend',
+            'description' => 'Detail data TPH',
+            'Total_tph' => $total_tph,
+            'verified_tph' => $verifiedCount,
+            'unverified_tph' => $unverifiedCount,
+            'progress_percentage' => $progressPercentage,
+            'blok_unverified' => $unveridblok,
+            'blok_tersidak' => $blok_tersidak,
+            'tph_detail_per_blok' => $tph_per_blok,
+            'total_blok_name_count' => $total_blok_name_count,
+            'user_input' => $tphPoints->pluck('user_input')->unique()->values()->toArray()
+        ];
+    }
+
+    public function resetMapView()
+    {
+        // Get the current estate and afdeling
+        if (!$this->selectedEstate || !$this->selectedAfdeling) {
+            return;
+        }
+
+        $est = Estate::find($this->selectedEstate)->est;
+        $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        $afdKey = 'AFD' . '-' . $afd;
+
+        // Get all TPH points for the current afdeling
+        $tphPoints = $this->getBaseTPHQuery($est, $afdKey, 'valid')->get();
+
+        // Update the TPH coordinates
+        $features = $tphPoints->map(function ($point) {
+            return $this->tphToGeoJsonFeature($point);
+        })->toArray();
+
+        $this->coordinatesTPH = [
+            'type' => 'FeatureCollection',
+            'features' => $features
+        ];
+
+        // Update the legend info
+        $this->updateLegendInfo($tphPoints);
+
+        // Reset the map view
+        $this->dispatch('reset-map-view', [
+            'plotMap' => $this->plotMap,
+            'coordinatesTPH' => $this->coordinatesTPH
+        ]);
+
+        // Clear any selected blok
+        $this->selectedBlok = '';
     }
 
     public function render()
