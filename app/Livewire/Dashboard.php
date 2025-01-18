@@ -155,33 +155,54 @@ class Dashboard extends Component
 
     private function generateLegendInfo($data)
     {
+        // titik tph valid
         $blok_tersidak = $data->pluck('blok_kode')->unique()->values()->toArray();
         $estate = $data->pluck('dept_abbr')->unique()->values()->toArray();
         $afdeling = $data->pluck('divisi_abbr')->unique()->values()->toArray();
         $verifiedCount = $data->count();
-        $data_unverified = $this->getBaseTPHQuery($estate, $afdeling, 'all');
+
+        // Get unverified data using the new query type
+        $data_unverified = $this->getBaseTPHQuery($estate, $afdeling, 'unverified');
         $unverifiedCount = $data_unverified->count();
-
-        // Dapatkan semua blok yang belum terverifikasi
         $unveridblok = $data_unverified->pluck('blok_kode')->unique()->values()->toArray();
-
-        // Hapus blok yang sudah tersidak dari unveridblok menggunakan array_diff
-        $unveridblok = array_values(array_diff($unveridblok, $blok_tersidak));
-
         // Hitung persentase progress
-        $progressPercentage = $unverifiedCount > 0
-            ? round(($verifiedCount / $unverifiedCount) * 100, 1)
-            : 0;
 
+        // get detail how many tph coordinates in each blok kode
+        $tph_per_blok = $this->getBaseTPHQuery($estate, $afdeling, 'all')
+            ->select('blok_kode')
+            ->selectRaw('COUNT(*) as total_tph')
+            ->selectRaw("SUM(CASE WHEN lon = '-' THEN 1 ELSE 0 END) as unverified_tph")
+            ->selectRaw("SUM(CASE WHEN lon != '-' THEN 1 ELSE 0 END) as verified_tph")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN lon = '-' THEN nomor ELSE NULL END) as unverified_tph_numbers")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN status = 1 THEN nomor ELSE NULL END) as verified_tph_numbers")
+            ->groupBy('blok_kode')
+            ->get();
+
+        // dd($tph_per_blok);
+        $total_blok_name = $tph_per_blok->pluck('blok_kode')->toArray();
+        $total_blok_name_count = $tph_per_blok->count();
+        $total_tph = $tph_per_blok->sum('total_tph');
+
+        $progressPercentage = $total_tph > 0
+            ? round(($verifiedCount / $total_tph) * 100, 1)
+            : 0;
+        // $tphDetail = collect($tph_per_blok)
+        //     ->where('blok_kode', 'A003A')
+        //     ->first();
+        // dd($tphDetail);
+        // dd($tph_per_blok);
+        // dd($total_blok_name, $total_blok_name_count, $total_tph);
         $legendInfo = [
             'title' => 'Legend',
             'description' => 'Detail data TPH',
-            'Total_tph' => $unverifiedCount,
+            'Total_tph' => $total_tph,
             'verified_tph' => $verifiedCount,
             'unverified_tph' => $unverifiedCount,
             'progress_percentage' => $progressPercentage,
             'blok_unverified' => $unveridblok,
             'blok_tersidak' => $blok_tersidak,
+            'tph_detail_per_blok' => $tph_per_blok,
+            'total_blok_name_count' => $total_blok_name_count,
             'user_input' => $data->pluck('user_input')->unique()->values()->toArray()
         ];
 
@@ -200,6 +221,7 @@ class Dashboard extends Component
         switch ($type) {
             case 'all':
                 return KoordinatatTph::where('dept_abbr', $est)
+                    // ->where('status', '=', 1)
                     ->where('divisi_abbr', $afdKey);
             case 'valid':
                 return KoordinatatTph::where('dept_abbr', $est)
@@ -207,7 +229,15 @@ class Dashboard extends Component
                     ->where('lon', '!=', null)
                     ->where('lat', '!=', '-')
                     ->where('lon', '!=', '-')
+                    ->where('status', '=', 1)
                     ->where('divisi_abbr', $afdKey);
+            case 'unverified':
+                return KoordinatatTph::where('dept_abbr', $est)
+                    ->where('divisi_abbr', $afdKey)
+                    ->where(function ($query) {
+                        $query->where('status', '!=', 1)
+                            ->orWhereNull('status');
+                    });
         }
     }
     /**
@@ -231,6 +261,7 @@ class Dashboard extends Component
                 'blok' => $point->blok_kode,
                 'ancak' => $point->ancak,
                 'tph' => $point->nomor,
+                'status' => $point->status,
             ]
         ];
     }
@@ -321,6 +352,7 @@ class Dashboard extends Component
                     'sph' => $firstBlok->sph,
                     'bjr' => $firstBlok->bjr,
                     'afdeling' => $firstBlok->afdeling,
+                    // 'status' => $firstBlok->status,
                     'tersidak' => in_array($this->normalizeBlockCode($nama), $blokTersidak)
                 ]
             ];
@@ -355,7 +387,7 @@ class Dashboard extends Component
         }
 
         $this->editTphId = $id;
-        $this->editTphNumber = $tph->tph;
+        $this->editTphNumber = $tph->nomor;
         $this->editAncakNumber = $tph->ancak;
         $this->dispatch('open-modal', id: 'modaltph');
     }
@@ -401,7 +433,7 @@ class Dashboard extends Component
         // dd($this->editTphNumber, $this->editAncakNumber, $tph);
         try {
             $tph->update([
-                'tph' => $this->editTphNumber,
+                'nomor' => $this->editTphNumber,
                 'ancak' => $this->editAncakNumber,
             ]);
 
@@ -461,9 +493,12 @@ class Dashboard extends Component
                 return;
             }
 
-            $tph->delete();
+            // Instead of deleting, update status to 0
+            $tph->update([
+                'status' => 0,
+            ]);
 
-            // Close the modal after successful deletion
+            // Close the modal after successful update
             $this->dispatch('close-modal', id: 'confirmdelete');
             $this->dispatch('close-modal', id: 'modaltph');
 
@@ -473,13 +508,13 @@ class Dashboard extends Component
             Notification::make()
                 ->title('Berhasil')
                 ->success()
-                ->body('Data TPH berhasil dihapus.')
+                ->body('Status TPH berhasil diubah menjadi tidak aktif.')
                 ->send();
         } catch (\Exception $e) {
             Notification::make()
                 ->title('Error')
                 ->danger()
-                ->body('Gagal menghapus data TPH.')
+                ->body('Gagal mengubah status TPH.')
                 ->send();
         }
     }

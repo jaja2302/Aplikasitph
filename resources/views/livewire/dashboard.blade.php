@@ -233,79 +233,134 @@
     </div>
     @if($legendInfo)
     <!-- Legend Card -->
-    <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white shadow-sm rounded-lg p-6">
+        <div class="space-y-6">
             <!-- Basic Info Section -->
-            <div class="space-y-4">
-                <h3 class="text-lg font-medium text-gray-900">{{ $legendInfo['title'] }}</h3>
-                <p class="text-gray-600">{{ $legendInfo['description'] }}</p>
-
-                <div class="space-y-2">
-                    <p class="font-medium">Total TPH: {{ $legendInfo['Total_tph'] }}</p>
-                    <div class="flex items-center space-x-2">
-                        <span class="flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-green-600 mr-2"></span>
-                            Terverifikasi: {{ $legendInfo['verified_tph'] }}
-                        </span>
-                        <span class="flex items-center">
-                            <span class="w-3 h-3 rounded-full bg-red-600 mr-2"></span>
-                            Belum: {{ $legendInfo['unverified_tph'] }}
-                        </span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        <h3 class="text-lg font-semibold text-gray-900">Detail Data TPH</h3>
                     </div>
-                    <div class="relative pt-1">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <span class="text-xs font-semibold inline-block text-green-600">
-                                    Progress: {{ $legendInfo['progress_percentage'] }}%
-                                </span>
-                            </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Total Blok</div>
+                            <div class="text-2xl font-bold text-gray-900">{{ $legendInfo['total_blok_name_count'] }}</div>
                         </div>
-                        <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
-                            <div style="width: {{ $legendInfo['progress_percentage'] }}%"
-                                class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-600">
-                            </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">Total TPH</div>
+                            <div class="text-2xl font-bold text-gray-900">{{ $legendInfo['Total_tph'] }}</div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Petugas & Blok Tersidak Section -->
-            <div class="space-y-4">
-                @if(isset($legendInfo['user_input']) && count($legendInfo['user_input']) > 0)
-                <div>
-                    <h4 class="font-medium text-gray-900 mb-2">Petugas:</h4>
-                    <ul class="list-disc pl-5 space-y-1">
+                <!-- Petugas Section -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-gray-900 mb-3">Petugas</h4>
+                    <div class="space-y-2">
                         @foreach($legendInfo['user_input'] as $user)
-                        <li class="text-gray-600">{{ $user }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
-
-                @if(isset($legendInfo['blok_tersidak']) && count($legendInfo['blok_tersidak']) > 0)
-                <div>
-                    <h4 class="font-medium text-gray-900 mb-2">Blok Tersidak:</h4>
-                    <div class="grid grid-cols-3 gap-2">
-                        @foreach($legendInfo['blok_tersidak'] as $blok)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            {{ $blok }}
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <span class="text-sm text-gray-600">{{ $user }}</span>
+                        </div>
                         @endforeach
                     </div>
                 </div>
-                @endif
             </div>
 
-            <!-- Blok Belum Tersidak Section -->
-            <div>
+            <!-- Full Width Progress Section -->
+            <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-600">Status TPH</span>
+                    <span class="text-sm font-medium text-gray-900">{{ $legendInfo['progress_percentage'] }}%</span>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-sm">Terverifikasi: {{ $legendInfo['verified_tph'] }}</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span class="text-sm">Belum: {{ $legendInfo['unverified_tph'] }}</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="relative pt-1">
+                    <div class="h-2 rounded-full bg-gray-200">
+                        <div class="h-2 rounded-full bg-green-500 transition-all duration-300"
+                            style="width: {{ $legendInfo['progress_percentage'] }}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blok Status Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Blok Tersidak -->
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Tersidak</h4>
+                    <div class="grid grid-cols-1 gap-3">
+                        @foreach($legendInfo['blok_tersidak'] as $blok)
+                        @php
+                        $tphDetail = collect($legendInfo['tph_detail_per_blok'])
+                        ->where('blok_kode', $blok)
+                        ->first();
+                        $totalTph = $tphDetail->total_tph ?? 0;
+                        $verifiedTph = $tphDetail->verified_tph ?? 0;
+                        @endphp
+                        <div class="flex flex-col gap-1">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ $blok }} ({{ $verifiedTph }}/{{ $totalTph }})
+                            </span>
+                            @if($tphDetail && $tphDetail->verified_tph_numbers)
+                            <div class="text-xs text-gray-600 break-words">
+                                <span class="font-medium">TPH:</span>
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach(explode(',', $tphDetail->verified_tph_numbers) as $tphNumber)
+                                    <span class="px-1.5 py-0.5 bg-green-50 rounded">{{ $tphNumber }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Blok Belum Tersidak -->
                 @if(isset($legendInfo['blok_unverified']) && count($legendInfo['blok_unverified']) > 0)
-                <div>
-                    <h4 class="font-medium text-gray-900 mb-2">Blok Belum Tersidak:</h4>
-                    <div class="grid grid-cols-3 gap-2">
+                <div class="bg-red-50 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-red-900 mb-3">Blok Belum Tersidak</h4>
+                    <div class="grid grid-cols-1 gap-3">
                         @foreach($legendInfo['blok_unverified'] as $blok)
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {{ $blok }}
-                        </span>
+                        @php
+                        $tphDetail = collect($legendInfo['tph_detail_per_blok'])
+                        ->where('blok_kode', $blok)
+                        ->first();
+                        $totalTph = $tphDetail->total_tph ?? 0;
+                        $unverifiedTph = $tphDetail->unverified_tph ?? 0;
+                        @endphp
+                        <div class="flex flex-col gap-1">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                {{ $blok }} ({{ $unverifiedTph }}/{{ $totalTph }})
+                            </span>
+                            @if($tphDetail && $tphDetail->unverified_tph_numbers)
+                            <div class="text-xs text-gray-600 break-words">
+                                <span class="font-medium">TPH:</span>
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach(explode(',', $tphDetail->unverified_tph_numbers) as $tphNumber)
+                                    <span class="px-1.5 py-0.5 bg-red-50 rounded">{{ $tphNumber }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            @endif
+                        </div>
                         @endforeach
                     </div>
                 </div>
@@ -442,6 +497,7 @@
                             TPH: ${feature.properties.tph}<br>
                             Estate: ${feature.properties.estate}<br>
                             Afdeling: ${feature.properties.afdeling}<br>
+                            Status: ${statusText}
                         `;
 
                         // Only add edit button if user has privileges
@@ -490,7 +546,7 @@
                     style: function(feature) {
                         const isTersidak = feature.properties.tersidak;
                         return {
-                            fillColor: isTersidak ? '#4CAF50' : '#FF5252', // Hijau jika tersidak, Merah jika belum
+                            fillColor: isTersidak ? '#87CEEB' : '#FF5252', // Hijau jika tersidak, Merah jika belum
                             weight: 2,
                             opacity: 1,
                             color: 'white',
