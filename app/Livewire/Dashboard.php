@@ -22,18 +22,9 @@ class Dashboard extends Component
     public $estate = [];
     public $afdeling = [];
     public $blok = [];
-    public $selectedRegional = '';
-    public $selectedWilayah = '';
-    public $selectedEstate = '';
-    public $selectedAfdeling = '';
-    public $plotMap = [];
-    public $plotType = '';
-    public $coordinatesTPH = ['type' => 'FeatureCollection', 'features' => []];
     public $isLoading = false;
     public $legendInfo = [];
     public $blokTersidak = [];
-    public $selectedDate;
-    public $selectedBlok = '';
     public $isProcessing = false;
     public $tphData;
     public $editTphId;
@@ -43,16 +34,37 @@ class Dashboard extends Component
     public $estateName;
     public $afdelingName;
     public $blokName;
+    // public $blokNama;
+    // Add constants for frequently used strings
+    private const AFD_PREFIX = 'AFD-';
+    private const DEFAULT_GEOJSON = ['type' => 'FeatureCollection', 'features' => []];
+
+    // Group related properties
+    // Map related
+    public $plotMap = [];
+    public $plotType = '';
+    public $coordinatesTPH;
     public $focusOnTPHState = false;
     public $resetMapViewState = false;
+
+    // Selection related
+    public $selectedRegional = '';
+    public $selectedWilayah = '';
+    public $selectedEstate = '';
+    public $selectedAfdeling = '';
+    public $selectedBlok = '';
+    public $selectedDate;
+    public $stateDetailEstateAfdeling = true;
+    // Cache properties
+    private $cachedEstateName;
+    private $cachedAfdelingName;
 
     public function mount()
     {
         $this->title = 'Maps TPH';
         $this->regional = Regional::all();
         $this->user = check_previlege(Auth::user()->user_id);
-        // dd($this->user);
-        // $this->selectedDate = now()->format('Y-m-d');
+        $this->coordinatesTPH = self::DEFAULT_GEOJSON;
     }
 
     public function updatedSelectedRegional()
@@ -86,7 +98,6 @@ class Dashboard extends Component
 
     public function updatedSelectedBlok()
     {
-        $this->focusOnTPH = false;
         $this->resetSelections('blok');
         $this->updateMaps($this->blok);
     }
@@ -124,6 +135,7 @@ class Dashboard extends Component
                 $this->estate = [];
                 $this->afdeling = [];
                 $this->blok = [];
+                $this->blokName = '';
                 break;
             case 'wilayah':
                 $this->selectedEstate = '';
@@ -131,16 +143,20 @@ class Dashboard extends Component
                 $this->selectedBlok = '';
                 $this->afdeling = [];
                 $this->blok = [];
+                $this->blokName = '';
                 break;
             case 'estate':
                 $this->selectedAfdeling = '';
                 $this->selectedBlok = '';
                 $this->blok = [];
+                $this->blokName = '';
                 break;
             case 'afdeling':
                 $this->selectedBlok = '';
+                $this->blokName = '';
                 break;
             case 'blok':
+                $this->blokName = '';
                 // Only reset plot and TPH data
                 break;
         }
@@ -159,35 +175,34 @@ class Dashboard extends Component
         }
     }
 
-    /**
-     * Get base query for TPH points with valid coordinates
-     * 
-     * @param string $est Estate code
-     * @param string $afdKey Afdeling key
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    private function getBaseTPHQuery($est, $afdKey, $type)
+    private function getBaseTPHQuery($est, $afdKey, $type, $blokName = null)
     {
+        $query = KoordinatatTph::where('dept_abbr', $est)
+            ->where('divisi_abbr', $afdKey);
+
         switch ($type) {
-            case 'all':
-                return KoordinatatTph::where('dept_abbr', $est)
-                    // ->where('status', '=', 1)
-                    ->where('divisi_abbr', $afdKey);
             case 'valid':
-                return KoordinatatTph::where('dept_abbr', $est)
-                    ->where('lat', '!=', null)
-                    ->where('lon', '!=', null)
+                if ($blokName) {
+                    $query->where('blok_kode', 'LIKE', '%' . $blokName . '%');
+                }
+                return $query->where('status', 1)
+                    ->whereNotNull('lat')
+                    ->whereNotNull('lon')
                     ->where('lat', '!=', '-')
-                    ->where('lon', '!=', '-')
-                    ->where('status', '=', 1)
-                    ->where('divisi_abbr', $afdKey);
+                    ->where('lon', '!=', '-');
             case 'unverified':
-                return KoordinatatTph::where('dept_abbr', $est)
-                    ->where('divisi_abbr', $afdKey)
-                    ->where(function ($query) {
-                        $query->where('status', '!=', 1)
-                            ->orWhereNull('status');
-                    });
+                if ($blokName) {
+                    $query->where('blok_kode', 'LIKE', '%' . $blokName . '%');
+                }
+                return $query->where(function ($q) {
+                    $q->where('status', '!=', 1)
+                        ->orWhereNull('status');
+                });
+            default:
+                if ($blokName) {
+                    $query->where('blok_kode', 'LIKE', '%' . $blokName . '%');
+                }
+                return $query;
         }
     }
     /**
@@ -216,37 +231,44 @@ class Dashboard extends Component
         ];
     }
 
+    // Cache estate and afdeling names
+    private function getEstateAndAfdelingNames()
+    {
+        if (!$this->cachedEstateName) {
+            $this->cachedEstateName = Estate::find($this->selectedEstate)->est;
+            $this->cachedAfdelingName = Afdeling::find($this->selectedAfdeling)->nama;
+        }
+        return [
+            'estate' => $this->cachedEstateName,
+            'afdeling' => $this->cachedAfdelingName,
+            'afdKey' => self::AFD_PREFIX . $this->cachedAfdelingName
+        ];
+    }
+
     private function updateTPHCoordinates()
     {
         if (!$this->selectedEstate || !$this->selectedAfdeling) {
-            $this->coordinatesTPH = ['type' => 'FeatureCollection', 'features' => []];
+            $this->coordinatesTPH = self::DEFAULT_GEOJSON;
             $this->legendInfo = [];
             return;
         }
 
-        $this->estateName = Estate::find($this->selectedEstate)->est;
-        $this->afdelingName = Afdeling::find($this->selectedAfdeling)->nama;
-        $afdKey = 'AFD' . '-' . $this->afdelingName;
+        $names = $this->getEstateAndAfdelingNames();
+        $tphQuery = $this->getBaseTPHQuery($names['estate'], $names['afdKey'], 'valid');
 
-        $tphQuery = $this->getBaseTPHQuery($this->estateName, $afdKey, 'valid');
-
-        if ($this->selectedBlok) {
-            $blokNama = Blok::find($this->selectedBlok)->nama;
-            $tphQuery->where('blok', 'LIKE', '%' . $blokNama . '%');
+        // Hanya filter berdasarkan blok jika selectedBlok ada dan bukan dalam mode reset
+        if ($this->selectedBlok && !$this->focusOnTPHState) {
+            $this->blokName = Blok::find($this->selectedBlok)->nama;
+            $tphQuery->where('blok_kode', 'LIKE', '%' . $this->blokName . '%');
         }
 
-        $tphPoints = $tphQuery->get();
-        $features = $tphPoints->map(function ($point) {
-            return $this->tphToGeoJsonFeature($point);
-        })->toArray();
+        // Optimize by selecting only needed fields
+        $tphPoints = $tphQuery->get(['id', 'dept_abbr', 'divisi_abbr', 'blok_kode', 'ancak', 'nomor', 'status', 'lat', 'lon', 'blok_kode', 'user_input']);
 
-        // Update legend info terpisah dari fokus TPH
+        $features = $tphPoints->map(fn($point) => $this->tphToGeoJsonFeature($point))->toArray();
+
         $this->updateLegendInfo($tphPoints);
-
-        $this->coordinatesTPH = [
-            'type' => 'FeatureCollection',
-            'features' => $features
-        ];
+        $this->coordinatesTPH = ['type' => 'FeatureCollection', 'features' => $features];
     }
 
     private function getBlokTersidak($est, $afdKey)
@@ -260,6 +282,7 @@ class Dashboard extends Component
             ->values()
             ->toArray();
     }
+
 
     private function generateMapPlotBlok()
     {
@@ -509,6 +532,7 @@ class Dashboard extends Component
             ->first();
 
         if ($tph) {
+            $this->stateDetailEstateAfdeling = false;
             // Only dispatch the focus event without updating any other data
             $this->dispatch('focus-tph', coordinates: [
                 'lat' => $tph->lat,
@@ -519,6 +543,7 @@ class Dashboard extends Component
                 'afdeling' => $afd,
                 'status' => $tph->status
             ]);
+
 
             // Clear the legend info temporarily
             $this->legendInfo = [
@@ -553,18 +578,18 @@ class Dashboard extends Component
 
         // titik tph valid
         $blok_tersidak = $tphPoints->pluck('blok_kode')->unique()->values()->toArray();
-        $estate = $tphPoints->pluck('dept_abbr')->unique()->values()->toArray();
-        $afdeling = $tphPoints->pluck('divisi_abbr')->unique()->values()->toArray();
+        // $estate = $tphPoints->pluck('dept_abbr')->unique()->values()->toArray();
+        // $afdeling = $tphPoints->pluck('divisi_abbr')->unique()->values()->toArray();
         $verifiedCount = $tphPoints->count();
 
         // dd($blok_tersidak);
         // Get unverified data
-        $data_unverified = $this->getBaseTPHQuery($est, $afdKey, 'unverified');
+        $data_unverified = $this->getBaseTPHQuery($est, $afdKey, 'unverified', $this->blokName);
         $unverifiedCount = $data_unverified->count();
         $unveridblok = $data_unverified->pluck('blok_kode')->unique()->values()->toArray();
 
         // get detail tph per blok
-        $tph_per_blok = $this->getBaseTPHQuery($est, $afdKey, 'all')
+        $tph_per_blok = $this->getBaseTPHQuery($est, $afdKey, 'all', $this->blokName)
             ->select('blok_kode')
             ->selectRaw('COUNT(*) as total_tph')
             ->selectRaw("SUM(CASE WHEN lon = '-' THEN 1 ELSE 0 END) as unverified_tph")
@@ -575,6 +600,7 @@ class Dashboard extends Component
             ->get();
 
         // dd($tph_per_blok);
+
         $total_blok_name_count = $tph_per_blok->count();
         $total_tph = $tph_per_blok->sum('total_tph');
 
@@ -597,6 +623,10 @@ class Dashboard extends Component
             'total_blok_count_unverified' => $total_blok_name_count - count($blok_tersidak),
             'user_input' => $tphPoints->pluck('user_input')->unique()->values()->toArray()
         ];
+
+        // if ($this->selectedBlok) {
+        //     dd($this->legendInfo);
+        // }
     }
 
     public function resetMapView()
@@ -608,34 +638,14 @@ class Dashboard extends Component
             return;
         }
 
-        $est = Estate::find($this->selectedEstate)->est;
-        $afd = Afdeling::find($this->selectedAfdeling)->nama;
-        $afdKey = 'AFD' . '-' . $afd;
+        // // Reset selectedBlok jika ada
+        // if ($this->selectedBlok) {
+        //     $this->selectedBlok = '';
+        // }
 
-        // Get all TPH points for the current afdeling
-        $tphPoints = $this->getBaseTPHQuery($est, $afdKey, 'valid')->get();
-
-        // Update the TPH coordinates
-        $features = $tphPoints->map(function ($point) {
-            return $this->tphToGeoJsonFeature($point);
-        })->toArray();
-
-        $this->coordinatesTPH = [
-            'type' => 'FeatureCollection',
-            'features' => $features
-        ];
-
-        // Restore the full legend info
-        $this->updateLegendInfo($tphPoints);
-
-        // Reset the map view
-        $this->dispatch('reset-map-view', [
-            'plotMap' => $this->plotMap,
-            'coordinatesTPH' => $this->coordinatesTPH
-        ]);
-
-        // Clear any selected blok
-        $this->selectedBlok = '';
+        // Update maps dengan data terbaru
+        $this->updateMaps($this->blok);
+        $this->stateDetailEstateAfdeling = true;
     }
 
     public function render()

@@ -332,6 +332,16 @@
     <!-- Legend Card -->
     <div class="bg-white shadow-sm rounded-lg p-6">
         <div class="space-y-6">
+            <h1 class="text-lg font-semibold">Filter blok : {{ $blokName }}</h1>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Klik Nomor TPH untuk melihat detail data TPH di peta</h3>
+                <button
+                    wire:click="resetMapView"
+                    class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
+                    Reset View
+                </button>
+            </div>
+            @if($stateDetailEstateAfdeling)
             <!-- Basic Info Section -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-4">
@@ -404,15 +414,6 @@
                 <div class="bg-green-50 rounded-lg p-4">
                     <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Terinput</h4>
                     <!-- Di bagian atas legend, tambahkan tombol reset -->
-
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Klik Nomor TPH untuk melihat detail data TPH di peta</h3>
-                        <button
-                            wire:click="resetMapView"
-                            class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors">
-                            Reset View
-                        </button>
-                    </div>
                     <div class="grid grid-cols-1 gap-3">
                         @foreach($legendInfo['blok_tersidak'] as $blok)
                         @php
@@ -444,6 +445,7 @@
                         @endforeach
                     </div>
                 </div>
+
 
                 <!-- Blok Belum Tersidak -->
                 @if(isset($legendInfo['blok_unverified']) && count($legendInfo['blok_unverified']) > 0)
@@ -479,6 +481,7 @@
                 </div>
                 @endif
             </div>
+            @endif
         </div>
     </div>
     @endif
