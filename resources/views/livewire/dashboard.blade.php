@@ -297,7 +297,7 @@
                     <select id="blok"
                         wire:model.live="selectedBlok"
                         class="block w-full rounded-lg border-gray-300 shadow-sm focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed transition duration-150 ease-in-out"
-                        @if(!$blok || $isProcessing) disabled @endif>
+                        @if(!$blok || $isProcessing || $focusOnTPHState) disabled @endif>
                         <option value="">Pilih Blok</option>
                         @foreach($blok as $blk)
                         <option value="{{ $blk->id }}">{{ $blk->nama }}</option>

@@ -43,6 +43,9 @@ class Dashboard extends Component
     public $estateName;
     public $afdelingName;
     public $blokName;
+    public $focusOnTPHState = false;
+    public $resetMapViewState = false;
+
     public function mount()
     {
         $this->title = 'Maps TPH';
@@ -83,6 +86,7 @@ class Dashboard extends Component
 
     public function updatedSelectedBlok()
     {
+        $this->focusOnTPH = false;
         $this->resetSelections('blok');
         $this->updateMaps($this->blok);
     }
@@ -485,6 +489,9 @@ class Dashboard extends Component
 
     public function focusOnTPH($blok, $tphNumber)
     {
+        // Set focusOnTPH to true when focusing on a TPH
+        $this->focusOnTPHState = true;
+
         // Find the TPH coordinates
         if (!$this->selectedEstate || !$this->selectedAfdeling) {
             return;
@@ -594,6 +601,9 @@ class Dashboard extends Component
 
     public function resetMapView()
     {
+        // Reset the focus state
+        $this->focusOnTPHState = false;
+
         if (!$this->selectedEstate || !$this->selectedAfdeling) {
             return;
         }
