@@ -81,75 +81,98 @@
         <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ $title }}</h1>
 
         <!-- User Guide Section with Alpine.js -->
-        <div x-data="{ open: false }" class="mt-4">
-            <button @click="open = !open" class="w-full flex items-center justify-between p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h2 class="text-lg font-semibold text-blue-800">Panduan Penggunaan</h2>
-                </div>
-                <svg :class="open ? 'rotate-180 transform' : ''" class="w-5 h-5 text-blue-600 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        <div x-data="{ open: false }" class="relative">
+            <!-- Floating Help Button -->
+            <button @click="open = !open"
+                class="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
             </button>
 
+            <!-- Modal Overlay -->
             <div x-show="open"
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-black bg-opacity-50 z-40"
+                @click="open = false">
+            </div>
+
+            <!-- Guide Content Modal -->
+            <div x-show="open"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform translate-y-4"
                 x-transition:enter-end="opacity-100 transform translate-y-0"
                 x-transition:leave="transition ease-in duration-200"
                 x-transition:leave-start="opacity-100 transform translate-y-0"
-                x-transition:leave-end="opacity-0 transform -translate-y-2"
-                class="bg-blue-50 rounded-b-lg p-4 border-t border-blue-100">
-                <div class="space-y-3 text-sm text-blue-700">
-                    <div>
-                        <h3 class="font-medium mb-1">🎯 Cara Memulai:</h3>
-                        <ol class="list-decimal list-inside ml-2 space-y-1">
-                            <li>Pilih Regional, Wilayah, Estate, dan Afdeling secara berurutan pada panel filter</li>
-                            <li>Anda dapat memilih Blok spesifik untuk melihat detail TPH pada blok tersebut</li>
-                        </ol>
-                    </div>
+                x-transition:leave-end="opacity-0 transform translate-y-4"
+                class="fixed inset-4 sm:inset-auto sm:right-8 sm:bottom-8 sm:top-auto sm:left-auto sm:w-[600px] bg-white rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-y-auto">
 
-                    <div>
-                        <h3 class="font-medium mb-1">🗺️ Fitur Peta:</h3>
-                        <ul class="list-disc list-inside ml-2 space-y-1">
-                            <li>Gunakan slider Opacity untuk mengatur transparansi layer blok</li>
-                            <li>Klik pada titik TPH untuk melihat detail informasi</li>
-                            <li>Pilih antara tampilan Satellite atau OpenStreetMap di panel kanan atas</li>
-                        </ul>
-                    </div>
+                <!-- Guide Header -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                    <h2 class="text-xl font-semibold text-gray-800">Panduan Penggunaan</h2>
+                    <button @click="open = false" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
 
-                    <div>
-                        <h3 class="font-medium mb-1">📊 Detail Data TPH:</h3>
-                        <ul class="list-disc list-inside ml-2 space-y-1">
-                            <li>Tombol Reset View mengembalikan tampilan ke seluruh area afdeling setelah memilih Nomor tph</li>
-                            <li>Titik Hijau: TPH terverifikasi</li>
-                            <li>Titik Merah: TPH belum terverifikasi</li>
-                            <li>Blok Biru: Blok yang sudah memiliki TPH terverifikasi</li>
-                            <li>Blok Merah: Blok yang belum memiliki TPH terverifikasi</li>
-                        </ul>
-                    </div>
+                <!-- Guide Content -->
+                <div class="p-6 space-y-6">
+                    <div class="space-y-4 text-gray-600">
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-2">🎯 Cara Memulai:</h3>
+                            <ol class="list-decimal list-inside space-y-2 ml-2">
+                                <li>Pilih Regional, Wilayah, Estate, dan Afdeling secara berurutan pada panel filter</li>
+                                <li>Anda dapat memilih Blok spesifik untuk melihat detail TPH pada blok tersebut</li>
+                            </ol>
+                        </div>
 
-                    <div>
-                        <h3 class="font-medium mb-1">🔍 Detail TPH:</h3>
-                        <ul class="list-disc list-inside ml-2 space-y-1">
-                            <li>Panel detail menampilkan status verifikasi per blok</li>
-                            <li>Klik nomor TPH pada panel untuk menemukan lokasi TPH spesifik</li>
-                            <li>Persentase progress menunjukkan kemajuan verifikasi TPH</li>
-                        </ul>
-                    </div>
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-2">🗺️ Fitur Peta:</h3>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Gunakan slider Opacity untuk mengatur transparansi layer blok</li>
+                                <li>Klik pada titik TPH untuk melihat detail informasi</li>
+                                <li>Pilih antara tampilan Satellite atau OpenStreetMap di panel kanan atas</li>
+                            </ul>
+                        </div>
 
-                    @if($user)
-                    <div>
-                        <h3 class="font-medium mb-1">✏️ Fitur Edit (Admin):</h3>
-                        <ul class="list-disc list-inside ml-2 space-y-1">
-                            <li>Klik titik TPH untuk membuka popup informasi</li>
-                            <li>Gunakan tombol Edit TPH untuk mengubah nomor TPH dan ancak</li>
-                            <li>Perubahan akan langsung tersimpan setelah dikonfirmasi</li>
-                        </ul>
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-2">📊 Detail Data TPH:</h3>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Tombol Reset View mengembalikan tampilan ke seluruh area afdeling setelah memilih Nomor tph</li>
+                                <li>Titik Hijau: TPH terverifikasi</li>
+                                <li>Titik Merah: TPH belum terverifikasi</li>
+                                <li>Blok Biru: Blok yang sudah memiliki TPH terverifikasi</li>
+                                <li>Blok Merah: Blok yang belum memiliki TPH terverifikasi</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-2">🔍 Detail TPH:</h3>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Panel detail menampilkan status verifikasi per blok</li>
+                                <li>Klik nomor TPH pada panel untuk menemukan lokasi TPH spesifik</li>
+                                <li>Persentase progress menunjukkan kemajuan verifikasi TPH</li>
+                            </ul>
+                        </div>
+
+                        @if($user)
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-800 mb-2">✏️ Fitur Edit (Admin):</h3>
+                            <ul class="list-disc list-inside space-y-1 ml-2">
+                                <li>Klik titik TPH untuk membuka popup informasi</li>
+                                <li>Gunakan tombol Edit TPH untuk mengubah nomor TPH dan ancak</li>
+                                <li>Perubahan akan langsung tersimpan setelah dikonfirmasi</li>
+                            </ul>
+                        </div>
+                        @endif
                     </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -316,18 +339,43 @@
                         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                         </svg>
-                        <h3 class="text-lg font-semibold text-gray-900">Detail Data TPH</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">Detail Estate {{ $estateName }} Afdeling {{ $afdelingName }}</h3>
                     </div>
 
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-gray-50 rounded-lg p-4">
                             <div class="text-sm text-gray-600">Total Blok</div>
-                            <div class="text-2xl font-bold text-gray-900">{{ $legendInfo['total_blok_name_count'] }}</div>
+                            <div class="text-2xl font-bold text-gray-900">
+                                {{ $legendInfo['total_blok_name_count'] }}
+                                <span>(<span class="text-green-500">{{ $legendInfo['blok_tersidak_count'] }}</span>/<span class="text-red-500">{{ $legendInfo['total_blok_count_unverified'] }}</span>)</span>
+                            </div>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="text-sm text-gray-600">Total TPH</div>
-                            <div class="text-2xl font-bold text-gray-900">{{ $legendInfo['Total_tph'] }}</div>
+                            <div class="space-y-3">
+                                <!-- Header -->
+                                <div class="flex justify-between items-center">
+                                    <div class="text-sm text-gray-600">Total TPH</div>
+                                    <span class="text-sm font-medium text-gray-900">{{ $legendInfo['progress_percentage'] }}%</span>
+                                </div>
+
+                                <!-- Total Number -->
+                                <div class="text-2xl font-bold text-gray-900">
+                                    {{ $legendInfo['Total_tph'] }}
+                                    <span>(<span class="text-green-500">{{ $legendInfo['verified_tph'] }}</span>/<span class="text-red-500">{{ $legendInfo['unverified_tph'] }}</span>)</span>
+                                </div>
+
+
+
+                                <!-- Progress Bar -->
+                                <div class="relative">
+                                    <div class="h-1.5 rounded-full bg-gray-200">
+                                        <div class="h-1.5 rounded-full bg-green-500 transition-all duration-300"
+                                            style="width: {{ $legendInfo['progress_percentage'] }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -346,39 +394,15 @@
                 </div>
             </div>
 
-            <!-- Full Width Progress Section -->
-            <div class="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div class="flex justify-between items-center">
-                    <span class="text-sm font-medium text-gray-600">Status TPH</span>
-                    <span class="text-sm font-medium text-gray-900">{{ $legendInfo['progress_percentage'] }}%</span>
-                </div>
 
-                <div class="flex items-center gap-6">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                        <span class="text-sm">Terverifikasi: {{ $legendInfo['verified_tph'] }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                        <span class="text-sm">Belum: {{ $legendInfo['unverified_tph'] }}</span>
-                    </div>
-                </div>
-
-                <!-- Progress Bar -->
-                <div class="relative pt-1">
-                    <div class="h-2 rounded-full bg-gray-200">
-                        <div class="h-2 rounded-full bg-green-500 transition-all duration-300"
-                            style="width: {{ $legendInfo['progress_percentage'] }}%">
-                        </div>
-                    </div>
-                </div>
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Detail Blok per Titik TPH</h3>
             </div>
-
             <!-- Blok Status Section -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Blok Tersidak -->
                 <div class="bg-green-50 rounded-lg p-4">
-                    <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Tersidak</h4>
+                    <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Terinput</h4>
                     <!-- Di bagian atas legend, tambahkan tombol reset -->
 
                     <div class="flex justify-between items-center mb-4">
@@ -423,8 +447,9 @@
 
                 <!-- Blok Belum Tersidak -->
                 @if(isset($legendInfo['blok_unverified']) && count($legendInfo['blok_unverified']) > 0)
+
                 <div class="bg-red-50 rounded-lg p-4">
-                    <h4 class="text-sm font-semibold text-red-900 mb-3">Blok Belum Tersidak</h4>
+                    <h4 class="text-sm font-semibold text-red-900 mb-3">Blok Belum Terinput</h4>
                     <div class="grid grid-cols-1 gap-3">
                         @foreach($legendInfo['blok_unverified'] as $blok)
                         @php
@@ -587,7 +612,7 @@
                             TPH: ${feature.properties.tph}<br>
                             Estate: ${feature.properties.estate}<br>
                             Afdeling: ${feature.properties.afdeling}<br>
-                            Status: ${statusText}
+                          
                         `;
 
                         // Only add edit button if user has privileges
@@ -856,11 +881,7 @@
                 `<b>Blok: ${coordinates.blok}
                 <br>TPH: ${coordinates.tph}
                 <br>Estate: ${coordinates.estate}
-                <br>Afdeling: ${coordinates.afdeling}
-                <br>Status: ${coordinates.status === 1 ? 
-                    '<span class="text-green-600">Terverifikasi</span>' : 
-                    '<span class="text-red-600">Belum Terverifikasi</span>'}
-                </b>`
+                <br>Afdeling: ${coordinates.afdeling}`
             ).openPopup();
 
             // Add marker to map
