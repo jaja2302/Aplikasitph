@@ -502,7 +502,7 @@ class Dashboard extends Component
             ->first();
 
         if ($tph) {
-            // Hanya dispatch event untuk fokus ke TPH tanpa memperbarui data
+            // Only dispatch the focus event without updating any other data
             $this->dispatch('focus-tph', coordinates: [
                 'lat' => $tph->lat,
                 'lon' => $tph->lon,
@@ -512,6 +512,23 @@ class Dashboard extends Component
                 'afdeling' => $afd,
                 'status' => $tph->status
             ]);
+
+            // Clear the legend info temporarily
+            $this->legendInfo = [
+                'title' => 'Legend',
+                'description' => 'Detail data TPH',
+                'Total_tph' => 0,
+                'verified_tph' => 0,
+                'unverified_tph' => 0,
+                'progress_percentage' => 0,
+                'blok_unverified' => [],
+                'blok_tersidak' => [],
+                'blok_tersidak_count' => 0,
+                'tph_detail_per_blok' => collect([]),
+                'total_blok_name_count' => 0,
+                'total_blok_count_unverified' => 0,
+                'user_input' => []
+            ];
         }
     }
 
@@ -577,7 +594,6 @@ class Dashboard extends Component
 
     public function resetMapView()
     {
-        // Get the current estate and afdeling
         if (!$this->selectedEstate || !$this->selectedAfdeling) {
             return;
         }
@@ -599,7 +615,7 @@ class Dashboard extends Component
             'features' => $features
         ];
 
-        // Update the legend info
+        // Restore the full legend info
         $this->updateLegendInfo($tphPoints);
 
         // Reset the map view

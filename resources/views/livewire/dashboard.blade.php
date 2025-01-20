@@ -399,7 +399,7 @@
                 <h3 class="text-lg font-semibold">Detail Blok per Titik TPH</h3>
             </div>
             <!-- Blok Status Section -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[600px]">
                 <!-- Blok Tersidak -->
                 <div class="bg-green-50 rounded-lg p-4">
                     <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Terinput</h4>
