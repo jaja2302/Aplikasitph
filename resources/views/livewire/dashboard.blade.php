@@ -1,213 +1,49 @@
-<div class="space-y-6 p-4 bg-gray-50 min-h-screen">
-    <x-filament::modal id="modaltph" width="md">
-        <x-slot name="heading">
-            Edit TPH
-        </x-slot>
-
-        <div class="space-y-4 py-3">
-            <div class="grid grid-cols-2 gap-4">
-                <!-- TPH Number Input -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Nomor TPH
-                    </label>
-                    <input
-                        wire:model="editTphNumber"
-                        type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        placeholder="Masukkan nomor TPH" />
-                </div>
-
-                <!-- Ancak Number Input -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Nomor Ancak
-                    </label>
-                    <input
-                        wire:model="editAncakNumber"
-                        type="number"
-                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                        placeholder="Masukkan nomor ancak" />
-                </div>
-            </div>
-        </div>
-
-        <x-slot name="footerActions">
-            <x-filament::button wire:click="confirmDeleteTPH" wire:loading.attr="disabled" class="bg-red-500 hover:bg-red-600">
-                <span wire:loading.remove>Hapus</span>
-                <span wire:loading>Hapus...</span>
-            </x-filament::button>
-            <x-filament::button wire:click="updateTPH" wire:loading.attr="disabled">
-                <span wire:loading.remove>Simpan Perubahan</span>
-                <span wire:loading>Menyimpan...</span>
-            </x-filament::button>
-
-        </x-slot>
-    </x-filament::modal>
-
-    <x-filament::modal id="confirmdelete" width="md">
-        <x-slot name="heading">
-            Konfirmasi Hapus
-        </x-slot>
-        <div class="space-y-4 py-3">
-            <p>Apakah Anda yakin ingin menghapus data TPH ini?</p>
-        </div>
-        <x-slot name="footerActions">
-            <x-filament::button
-                wire:click="$dispatch('close-modal', { id: 'confirmdelete' })"
-                class="mr-2">
-                Batal
-            </x-filament::button>
-            <x-filament::button
-                wire:click="deleteTPH"
-                wire:loading.attr="disabled"
-                class="bg-red-500 hover:bg-red-600">
-                <span wire:loading.remove>Hapus</span>
-                <span wire:loading>Menghapus...</span>
-            </x-filament::button>
-        </x-slot>
-    </x-filament::modal>
-
-    <!-- Header with Breadcrumb -->
+<div class="space-y-6" x-data="{ open: false }">
+    <!-- Page Header -->
     <div class="bg-white shadow-sm rounded-lg p-6">
-        <div class="flex items-center space-x-2 text-gray-600">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            <span class="text-sm">Dashboard</span>
-            <span class="text-sm"></span>
-            <span class="text-sm font-medium text-green-600">{{ $title }}</span>
-        </div>
-        <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ $title }}</h1>
-
-        <!-- User Guide Section with Alpine.js -->
-        <div x-data="{ open: false }" class="relative">
-            <!-- Floating Help Button -->
-            <button @click="open = !open"
-                class="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-            </button>
-
-            <!-- Modal Overlay -->
-            <div x-show="open"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100"
-                x-transition:leave-end="opacity-0"
-                class="fixed inset-0 bg-black bg-opacity-50 z-40"
-                @click="open = false">
-            </div>
-
-            <!-- Guide Content Modal -->
-            <div x-show="open"
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 transform translate-y-4"
-                x-transition:enter-end="opacity-100 transform translate-y-0"
-                x-transition:leave="transition ease-in duration-200"
-                x-transition:leave-start="opacity-100 transform translate-y-0"
-                x-transition:leave-end="opacity-0 transform translate-y-4"
-                class="fixed inset-4 sm:inset-auto sm:right-8 sm:bottom-8 sm:top-auto sm:left-auto sm:w-[600px] bg-white rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-y-auto">
-
-                <!-- Guide Header -->
-                <div class="flex justify-between items-center p-6 border-b border-gray-100">
-                    <h2 class="text-xl font-semibold text-gray-800">Panduan Penggunaan</h2>
-                    <button @click="open = false" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center">
+                    <div class="bg-green-100 rounded-md p-2">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                         </svg>
-                    </button>
-                </div>
-
-                <!-- Guide Content -->
-                <div class="p-6 space-y-6">
-                    <div class="space-y-4 text-gray-600">
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">🎯 Cara Memulai:</h3>
-                            <ol class="list-decimal list-inside space-y-2 ml-2">
-                                <li>Pilih Regional, Wilayah, Estate, dan Afdeling secara berurutan pada panel filter</li>
-                                <li>Anda dapat memilih Blok spesifik untuk melihat detail TPH pada blok tersebut</li>
-                            </ol>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                            {{ $title }}
+                        </h2>
+                        <div class="mt-1 flex flex-col sm:flex-row sm:flex-wrap sm:mt-0 sm:space-x-6">
+                            <div class="mt-2 flex items-center text-sm text-gray-500">
+                                <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                </svg>
+                                Monitoring TPH
+                            </div>
                         </div>
-
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">🗺️ Fitur Peta:</h3>
-                            <ul class="list-disc list-inside space-y-1 ml-2">
-                                <li>Gunakan slider Opacity untuk mengatur transparansi layer blok</li>
-                                <li>Klik pada titik TPH untuk melihat detail informasi</li>
-                                <li>Pilih antara tampilan Satellite atau OpenStreetMap di panel kanan atas</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">📊 Detail Data TPH:</h3>
-                            <ul class="list-disc list-inside space-y-1 ml-2">
-                                <li>Tombol Reset View mengembalikan tampilan ke seluruh area afdeling setelah memilih Nomor tph</li>
-                                <li>Titik Hijau: TPH terverifikasi</li>
-                                <li>Titik Merah: TPH belum terverifikasi</li>
-                                <li>Blok Biru: Blok yang sudah memiliki TPH terverifikasi</li>
-                                <li>Blok Merah: Blok yang belum memiliki TPH terverifikasi</li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">🔍 Detail TPH:</h3>
-                            <ul class="list-disc list-inside space-y-1 ml-2">
-                                <li>Panel detail menampilkan status verifikasi per blok</li>
-                                <li>Klik nomor TPH pada panel untuk menemukan lokasi TPH spesifik</li>
-                                <li>Persentase progress menunjukkan kemajuan verifikasi TPH</li>
-                            </ul>
-                        </div>
-
-                        @if($user)
-                        <div>
-                            <h3 class="text-lg font-medium text-gray-800 mb-2">✏️ Fitur Edit (Admin):</h3>
-                            <ul class="list-disc list-inside space-y-1 ml-2">
-                                <li>Klik titik TPH untuk membuka popup informasi</li>
-                                <li>Gunakan tombol Edit TPH untuk mengubah nomor TPH dan ancak</li>
-                                <li>Perubahan akan langsung tersimpan setelah dikonfirmasi</li>
-                            </ul>
-                        </div>
-                        @endif
                     </div>
                 </div>
+            </div>
+
+            <!-- Help Button -->
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <button
+                    type="button"
+                    @click="open = true"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Panduan
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Filter Panel -->
-    <div x-data="{ open: false }" class="bg-white shadow-sm rounded-lg overflow-hidden">
-        <!-- Toggle Button -->
-        <button @click="open = !open"
-            class="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-200">
-            <div class="flex items-center space-x-3">
-                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                </svg>
-                <h2 class="text-lg font-medium text-gray-700">Filter Data</h2>
-            </div>
-            <svg :class="open ? 'rotate-180 transform' : ''"
-                class="w-5 h-5 text-gray-500 transition-transform duration-200"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
-        </button>
-
-        <!-- Filter Content -->
-        <div x-show="open"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 transform -translate-y-2"
-            x-transition:enter-end="opacity-100 transform translate-y-0"
-            x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100 transform translate-y-0"
-            x-transition:leave-end="opacity-0 transform -translate-y-2"
-            class="p-6 border-t border-gray-100">
-
+    <!-- Filter Section -->
+    <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+        <div class="p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Filter Data</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Regional Select -->
                 <div class="space-y-2">
@@ -308,15 +144,34 @@
         </div>
     </div>
 
-    <!-- Map Container with Loading State -->
+    <!-- Map Section -->
     <div class="bg-white shadow-sm rounded-lg overflow-hidden" style="position: relative; z-index: 0;">
         <div class="p-4 border-b border-gray-200">
-            <h3 class="text-lg font-medium text-gray-900">Peta Lokasi</h3>
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-medium text-gray-900">Peta Lokasi TPH</h3>
+                <div class="flex space-x-3">
+                    <!-- Layer Controls -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-500">Layer:</span>
+                        <select id="mapLayer" class="form-select text-sm border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500">
+                            <option value="satellite">Satellite</option>
+                            <option value="osm">OpenStreetMap</option>
+                        </select>
+                    </div>
+
+                    <!-- Opacity Control -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-500">Opacity:</span>
+                        <input type="range" id="mapOpacity" class="form-range" min="0" max="100" value="70">
+                        <span id="opacityValue" class="text-sm text-gray-500">70%</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
+        <!-- Map Container -->
         <div class="relative">
             <div wire:ignore class="h-[600px]" id="map"></div>
-
             <!-- Loading Overlay -->
             <div wire:loading class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
                 <div class="flex flex-col items-center">
@@ -324,15 +179,16 @@
                     <span class="mt-2 text-sm text-gray-600">Memuat data...</span>
                 </div>
             </div>
-
-
         </div>
     </div>
+
+    <!-- Legend/Info Section -->
     @if($legendInfo)
     <!-- Legend Card -->
+    @if($legendInfo['check_tph_per_blok'])
     <div class="bg-white shadow-sm rounded-lg p-6">
         <div class="space-y-6">
-            <h1 class="text-lg font-semibold">Filter blok : {{ $blokName }}</h1>
+
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-semibold">Klik Nomor TPH untuk melihat detail data TPH di peta</h3>
                 <button
@@ -484,9 +340,169 @@
             @endif
         </div>
     </div>
+    @else
+    <div class="bg-white shadow-sm rounded-lg p-6">
+        Tidak ada data
+    </div>
+    @endif
     @endif
 
+    <!-- Existing Modals -->
+    <x-filament::modal id="modaltph" width="md">
+        <x-slot name="heading">
+            Edit TPH
+        </x-slot>
 
+        <div class="space-y-4 py-3">
+            <div class="grid grid-cols-2 gap-4">
+                <!-- TPH Number Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Nomor TPH
+                    </label>
+                    <input
+                        wire:model="editTphNumber"
+                        type="number"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        placeholder="Masukkan nomor TPH" />
+                </div>
+
+                <!-- Ancak Number Input -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Nomor Ancak
+                    </label>
+                    <input
+                        wire:model="editAncakNumber"
+                        type="number"
+                        class="w-full rounded-lg border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                        placeholder="Masukkan nomor ancak" />
+                </div>
+            </div>
+        </div>
+
+        <x-slot name="footerActions">
+            <x-filament::button wire:click="confirmDeleteTPH" wire:loading.attr="disabled" class="bg-red-500 hover:bg-red-600">
+                <span wire:loading.remove>Hapus</span>
+                <span wire:loading>Hapus...</span>
+            </x-filament::button>
+            <x-filament::button wire:click="updateTPH" wire:loading.attr="disabled">
+                <span wire:loading.remove>Simpan Perubahan</span>
+                <span wire:loading>Menyimpan...</span>
+            </x-filament::button>
+
+        </x-slot>
+    </x-filament::modal>
+
+    <x-filament::modal id="confirmdelete" width="md">
+        <x-slot name="heading">
+            Konfirmasi Hapus
+        </x-slot>
+        <div class="space-y-4 py-3">
+            <p>Apakah Anda yakin ingin menghapus data TPH ini?</p>
+        </div>
+        <x-slot name="footerActions">
+            <x-filament::button
+                wire:click="$dispatch('close-modal', { id: 'confirmdelete' })"
+                class="mr-2">
+                Batal
+            </x-filament::button>
+            <x-filament::button
+                wire:click="deleteTPH"
+                wire:loading.attr="disabled"
+                class="bg-red-500 hover:bg-red-600">
+                <span wire:loading.remove>Hapus</span>
+                <span wire:loading>Menghapus...</span>
+            </x-filament::button>
+        </x-slot>
+    </x-filament::modal>
+    <div class="relative">
+        <!-- Modal Overlay -->
+        <div x-show="open"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-black bg-opacity-50 z-40"
+            @click="open = false">
+        </div>
+
+        <!-- Guide Content Modal -->
+        <div x-show="open"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 transform translate-y-4"
+            x-transition:enter-end="opacity-100 transform translate-y-0"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 transform translate-y-0"
+            x-transition:leave-end="opacity-0 transform translate-y-4"
+            class="fixed inset-4 sm:inset-auto sm:right-8 sm:bottom-8 sm:top-auto sm:left-auto sm:w-[600px] bg-white rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-y-auto">
+
+            <!-- Guide Header -->
+            <div class="flex justify-between items-center p-6 border-b border-gray-100">
+                <h2 class="text-xl font-semibold text-gray-800">Panduan Penggunaan</h2>
+                <button @click="open = false" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Guide Content -->
+            <div class="p-6 space-y-6">
+                <div class="space-y-4 text-gray-600">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">🎯 Cara Memulai:</h3>
+                        <ol class="list-decimal list-inside space-y-2 ml-2">
+                            <li>Pilih Regional, Wilayah, Estate, dan Afdeling secara berurutan pada panel filter</li>
+                            <li>Anda dapat memilih Blok spesifik untuk melihat detail TPH pada blok tersebut</li>
+                        </ol>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">🗺️ Fitur Peta:</h3>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>Gunakan slider Opacity untuk mengatur transparansi layer blok</li>
+                            <li>Klik pada titik TPH untuk melihat detail informasi</li>
+                            <li>Pilih antara tampilan Satellite atau OpenStreetMap di panel kanan atas</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">📊 Detail Data TPH:</h3>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>Tombol Reset View mengembalikan tampilan ke seluruh area afdeling setelah memilih Nomor tph</li>
+                            <li>Titik Hijau: TPH terverifikasi</li>
+                            <li>Titik Merah: TPH belum terverifikasi</li>
+                            <li>Blok Biru: Blok yang sudah memiliki TPH terverifikasi</li>
+                            <li>Blok Merah: Blok yang belum memiliki TPH terverifikasi</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">🔍 Detail TPH:</h3>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>Panel detail menampilkan status verifikasi per blok</li>
+                            <li>Klik nomor TPH pada panel untuk menemukan lokasi TPH spesifik</li>
+                            <li>Persentase progress menunjukkan kemajuan verifikasi TPH</li>
+                        </ul>
+                    </div>
+
+                    @if($user)
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">✏️ Fitur Edit (Admin):</h3>
+                        <ul class="list-disc list-inside space-y-1 ml-2">
+                            <li>Klik titik TPH untuk membuka popup informasi</li>
+                            <li>Gunakan tombol Edit TPH untuk mengubah nomor TPH dan ancak</li>
+                            <li>Perubahan akan langsung tersimpan setelah dikonfirmasi</li>
+                        </ul>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @push('scripts')
 <script type="module">
@@ -496,52 +512,6 @@
         let plotLayer = null;
         let labelMarkers = [];
         let currentFillOpacity = 0.7;
-
-        // Custom Control untuk Opacity
-        L.Control.OpacitySlider = L.Control.extend({
-            onAdd: function(map) {
-                const container = L.DomUtil.create('div', 'leaflet-control opacity-control');
-                container.style.backgroundColor = 'white';
-                container.style.padding = '10px';
-                container.style.borderRadius = '5px';
-                container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
-
-                const label = L.DomUtil.create('div', '', container);
-                label.innerHTML = 'Opacity: <span id="opacity-value">70%</span>';
-
-                const slider = L.DomUtil.create('input', '', container);
-                slider.type = 'range';
-                slider.min = '0';
-                slider.max = '100';
-                slider.value = '70';
-                slider.style.width = '150px';
-                slider.style.marginTop = '5px';
-
-                L.DomEvent.on(slider, 'input', function(e) {
-                    const value = e.target.value;
-                    document.getElementById('opacity-value').innerHTML = value + '%';
-                    currentFillOpacity = value / 100;
-
-                    if (plotLayer) {
-                        plotLayer.eachLayer(function(layer) {
-                            layer.setStyle({
-                                fillOpacity: currentFillOpacity
-                            });
-                        });
-                    }
-                });
-
-                // Prevent map drag when using the slider
-                L.DomEvent.disableClickPropagation(container);
-
-                return container;
-            }
-        });
-
-        // Add the custom control
-        new L.Control.OpacitySlider({
-            position: 'topright'
-        }).addTo(map);
 
         // Base layers
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -555,19 +525,38 @@
             attribution: '© Google'
         });
 
-        // Layer control
-        const baseLayers = {
-            "OpenStreetMap": osmLayer,
-            "Satellite": satelliteLayer
-        };
-
         // Add default layer
         satelliteLayer.addTo(map);
 
-        // Add layer control to map
-        L.control.layers(baseLayers, null, {
-            position: 'topright'
-        }).addTo(map);
+        // Initialize layer control from the select element
+        const layerSelect = document.getElementById('mapLayer');
+        layerSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'osm') {
+                map.removeLayer(satelliteLayer);
+                map.addLayer(osmLayer);
+            } else {
+                map.removeLayer(osmLayer);
+                map.addLayer(satelliteLayer);
+            }
+        });
+
+        // Initialize opacity control from the range input
+        const opacitySlider = document.getElementById('mapOpacity');
+        const opacityValue = document.getElementById('opacityValue');
+
+        opacitySlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            opacityValue.textContent = value + '%';
+            currentFillOpacity = value / 100;
+
+            if (plotLayer) {
+                plotLayer.eachLayer(function(layer) {
+                    layer.setStyle({
+                        fillOpacity: currentFillOpacity
+                    });
+                });
+            }
+        });
 
         function updateTPHMarkers(value) {
             if (tphLayer) {

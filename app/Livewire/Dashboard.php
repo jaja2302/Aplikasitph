@@ -558,6 +558,7 @@ class Dashboard extends Component
                 'blok_tersidak_count' => 0,
                 'tph_detail_per_blok' => collect([]),
                 'total_blok_name_count' => 0,
+                'check_tph_per_blok' => true,
                 'total_blok_count_unverified' => 0,
                 'user_input' => []
             ];
@@ -600,6 +601,10 @@ class Dashboard extends Component
             ->get();
 
         // dd($tph_per_blok);
+        $check_tph_per_blok = true;
+        if ($tph_per_blok->isEmpty()) {
+            $check_tph_per_blok = false;
+        }
 
         $total_blok_name_count = $tph_per_blok->count();
         $total_tph = $tph_per_blok->sum('total_tph');
@@ -619,11 +624,13 @@ class Dashboard extends Component
             'blok_tersidak' => $blok_tersidak,
             'blok_tersidak_count' => count($blok_tersidak),
             'tph_detail_per_blok' => $tph_per_blok,
+            'check_tph_per_blok' => $check_tph_per_blok,
             'total_blok_name_count' => $total_blok_name_count,
             'total_blok_count_unverified' => $total_blok_name_count - count($blok_tersidak),
             'user_input' => $tphPoints->pluck('user_input')->unique()->values()->toArray()
         ];
 
+        // dd($this->legendInfo);
         // if ($this->selectedBlok) {
         //     dd($this->legendInfo);
         // }
