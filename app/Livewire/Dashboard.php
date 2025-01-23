@@ -76,7 +76,7 @@ class Dashboard extends Component
     public function updatedSelectedWilayah()
     {
         $this->resetSelections('wilayah');
-        $this->estate = $this->selectedWilayah ? Estate::where('wil', $this->selectedWilayah)->get() : [];
+        $this->estate = $this->selectedWilayah ? Estate::where('wil', $this->selectedWilayah)->where('emp', '!=', '1')->get() : [];
     }
 
     public function updatedSelectedEstate()
@@ -533,17 +533,17 @@ class Dashboard extends Component
 
         if ($tph) {
             $this->stateDetailEstateAfdeling = false;
-            // Only dispatch the focus event without updating any other data
             $this->dispatch('focus-tph', coordinates: [
                 'lat' => $tph->lat,
                 'lon' => $tph->lon,
                 'blok' => $blok,
+                'ancak' => $tph->ancak,
                 'tph' => $tphNumber,
                 'estate' => $est,
                 'afdeling' => $afd,
-                'status' => $tph->status
+                'status' => $tph->status,
+                'id' => $tph->id
             ]);
-
 
             // Clear the legend info temporarily
             $this->legendInfo = [
@@ -577,56 +577,58 @@ class Dashboard extends Component
         $afd = Afdeling::find($this->selectedAfdeling)->nama;
         $afdKey = 'AFD' . '-' . $afd;
 
-        // titik tph valid
-        $blok_tersidak = $tphPoints->pluck('blok_kode')->unique()->values()->toArray();
-        // $estate = $tphPoints->pluck('dept_abbr')->unique()->values()->toArray();
-        // $afdeling = $tphPoints->pluck('divisi_abbr')->unique()->values()->toArray();
-        $verifiedCount = $tphPoints->count();
-
-        // dd($blok_tersidak);
-        // Get unverified data
-        $data_unverified = $this->getBaseTPHQuery($est, $afdKey, 'unverified', $this->blokName);
-        $unverifiedCount = $data_unverified->count();
-        $unveridblok = $data_unverified->pluck('blok_kode')->unique()->values()->toArray();
-
         // get detail tph per blok
         $tph_per_blok = $this->getBaseTPHQuery($est, $afdKey, 'all', $this->blokName)
             ->select('blok_kode')
             ->selectRaw('COUNT(*) as total_tph')
-            ->selectRaw("SUM(CASE WHEN lon = '-' THEN 1 ELSE 0 END) as unverified_tph")
-            ->selectRaw("SUM(CASE WHEN lon != '-' THEN 1 ELSE 0 END) as verified_tph")
-            ->selectRaw("GROUP_CONCAT(CASE WHEN lon = '-' THEN nomor ELSE NULL END) as unverified_tph_numbers")
-            ->selectRaw("GROUP_CONCAT(CASE WHEN status = 1 THEN nomor ELSE NULL END) as verified_tph_numbers")
+            ->selectRaw("SUM(CASE WHEN lon = '-' OR lon = '' OR lon is null OR status != 1 THEN 1 ELSE 0 END) as unverified_tph")
+            ->selectRaw("SUM(CASE WHEN status = 1 AND lat != '-' AND lon != '-' THEN 1 ELSE 0 END) as verified_tph")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN lon = '-' OR lon = '' OR lon is null OR status != 1 THEN nomor ELSE NULL END) as unverified_tph_numbers")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN status = 1 AND lat != '-' AND lon != '-' THEN nomor ELSE NULL END) as verified_tph_numbers")
             ->groupBy('blok_kode')
             ->get();
 
         // dd($tph_per_blok);
+        // if ($this->selectedBlok) {
+        //     dd($tph_per_blok, $unveridblok, $data_unverified->get()->toArray());
+        // }
+
         $check_tph_per_blok = true;
         if ($tph_per_blok->isEmpty()) {
             $check_tph_per_blok = false;
         }
-
+        // dd($tph_per_blok);
         $total_blok_name_count = $tph_per_blok->count();
         $total_tph = $tph_per_blok->sum('total_tph');
+        $total_tph_verif = $tph_per_blok->sum('verified_tph');
+        $total_tph_unverif = $tph_per_blok->sum('unverified_tph');
+        $verifiedCount = $tph_per_blok->sum(function ($blok) {
+            return $blok->verified_tph > 0 ? 1 : 0;
+        });
+        // $unveridblokcount = $tph_per_blok->sum(function ($blok) {
+        //     return $blok->unverified_tph > 0 ? 1 : 0;
+        // });
+        $unveridblokcount = $total_blok_name_count - $verifiedCount;
+        // dd($tph_per_blok);
+        // dd($verifiedCount);
 
         $progressPercentage = $total_tph > 0
-            ? round(($verifiedCount / $total_tph) * 100, 1)
+            ? round(($total_tph_verif / $total_tph) * 100, 1)
             : 0;
 
         $this->legendInfo = [
             'title' => 'Legend',
             'description' => 'Detail data TPH',
-            'Total_tph' => $total_tph,
-            'verified_tph' => $verifiedCount,
-            'unverified_tph' => $unverifiedCount,
+            'total_tph' => $total_tph,
+            'total_tph_verif' => $total_tph_verif,
+            'total_tph_unverif' => $total_tph_unverif,
+            'verifiedblokcount' => $verifiedCount,
+            'unveridblokcount' => $unveridblokcount,
+            'total_blok_name_count' => $total_blok_name_count,
             'progress_percentage' => $progressPercentage,
-            'blok_unverified' => $unveridblok,
-            'blok_tersidak' => $blok_tersidak,
-            'blok_tersidak_count' => count($blok_tersidak),
             'tph_detail_per_blok' => $tph_per_blok,
             'check_tph_per_blok' => $check_tph_per_blok,
-            'total_blok_name_count' => $total_blok_name_count,
-            'total_blok_count_unverified' => $total_blok_name_count - count($blok_tersidak),
+
             'user_input' => $tphPoints->pluck('user_input')->unique()->values()->toArray()
         ];
 

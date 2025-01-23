@@ -214,7 +214,7 @@
                             <div class="text-sm text-gray-600">Total Blok</div>
                             <div class="text-2xl font-bold text-gray-900">
                                 {{ $legendInfo['total_blok_name_count'] }}
-                                <span>(<span class="text-green-500">{{ $legendInfo['blok_tersidak_count'] }}</span>/<span class="text-red-500">{{ $legendInfo['total_blok_count_unverified'] }}</span>)</span>
+                                <span>(<span class="text-green-500">{{ $legendInfo['verifiedblokcount'] }}</span>/<span class="text-red-500">{{ $legendInfo['unveridblokcount'] }}</span>)</span>
                             </div>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-4">
@@ -227,8 +227,8 @@
 
                                 <!-- Total Number -->
                                 <div class="text-2xl font-bold text-gray-900">
-                                    {{ $legendInfo['Total_tph'] }}
-                                    <span>(<span class="text-green-500">{{ $legendInfo['verified_tph'] }}</span>/<span class="text-red-500">{{ $legendInfo['unverified_tph'] }}</span>)</span>
+                                    {{ $legendInfo['total_tph'] }}
+                                    <span>(<span class="text-green-500">{{ $legendInfo['total_tph_verif'] }}</span>/<span class="text-red-500">{{ $legendInfo['total_tph_unverif'] }}</span>)</span>
                                 </div>
 
 
@@ -266,30 +266,23 @@
             </div>
             <!-- Blok Status Section -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto max-h-[600px]">
-                <!-- Blok Tersidak -->
+                <!-- Blok Terinput -->
                 <div class="bg-green-50 rounded-lg p-4">
                     <h4 class="text-sm font-semibold text-green-900 mb-3">Blok Terinput</h4>
-                    <!-- Di bagian atas legend, tambahkan tombol reset -->
                     <div class="grid grid-cols-1 gap-3">
-                        @foreach($legendInfo['blok_tersidak'] as $blok)
-                        @php
-                        $tphDetail = collect($legendInfo['tph_detail_per_blok'])
-                        ->where('blok_kode', $blok)
-                        ->first();
-                        $totalTph = $tphDetail->total_tph ?? 0;
-                        $verifiedTph = $tphDetail->verified_tph ?? 0;
-                        @endphp
+                        @foreach($legendInfo['tph_detail_per_blok'] as $tphDetail)
+                        @if($tphDetail->verified_tph > 0)
                         <div class="flex flex-col gap-1">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                {{ $blok }} ({{ $verifiedTph }}/{{ $totalTph }})
+                                {{ $tphDetail->blok_kode }} ({{ $tphDetail->verified_tph }}/{{ $tphDetail->total_tph }})
                             </span>
-                            @if($tphDetail && $tphDetail->verified_tph_numbers)
+                            @if($tphDetail->verified_tph_numbers)
                             <div class="text-xs text-gray-600 break-words">
                                 <span class="font-medium">TPH:</span>
                                 <div class="flex flex-wrap gap-1">
                                     @foreach(collect(explode(',', $tphDetail->verified_tph_numbers))->sort() as $tphNumber)
                                     <button
-                                        wire:click="focusOnTPH('{{ $blok }}', {{ $tphNumber }})"
+                                        wire:click="focusOnTPH('{{ $tphDetail->blok_kode }}', {{ $tphNumber }})"
                                         class="px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors cursor-pointer">
                                         {{ $tphNumber }}
                                     </button>
@@ -298,30 +291,22 @@
                             </div>
                             @endif
                         </div>
+                        @endif
                         @endforeach
                     </div>
                 </div>
 
-
-                <!-- Blok Belum Tersidak -->
-                @if(isset($legendInfo['blok_unverified']) && count($legendInfo['blok_unverified']) > 0)
-
+                <!-- Blok Belum Terinput -->
                 <div class="bg-red-50 rounded-lg p-4">
                     <h4 class="text-sm font-semibold text-red-900 mb-3">Blok Belum Terinput</h4>
                     <div class="grid grid-cols-1 gap-3">
-                        @foreach($legendInfo['blok_unverified'] as $blok)
-                        @php
-                        $tphDetail = collect($legendInfo['tph_detail_per_blok'])
-                        ->where('blok_kode', $blok)
-                        ->first();
-                        $totalTph = $tphDetail->total_tph ?? 0;
-                        $unverifiedTph = $tphDetail->unverified_tph ?? 0;
-                        @endphp
+                        @foreach($legendInfo['tph_detail_per_blok'] as $tphDetail)
+                        @if($tphDetail->unverified_tph > 0)
                         <div class="flex flex-col gap-1">
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                {{ $blok }} ({{ $unverifiedTph }}/{{ $totalTph }})
+                                {{ $tphDetail->blok_kode }} ({{ $tphDetail->unverified_tph }}/{{ $tphDetail->total_tph }})
                             </span>
-                            @if($tphDetail && $tphDetail->unverified_tph_numbers)
+                            @if($tphDetail->unverified_tph_numbers)
                             <div class="text-xs text-gray-600 break-words">
                                 <span class="font-medium">TPH:</span>
                                 <div class="flex flex-wrap gap-1">
@@ -332,10 +317,10 @@
                             </div>
                             @endif
                         </div>
+                        @endif
                         @endforeach
                     </div>
                 </div>
-                @endif
             </div>
             @endif
         </div>
@@ -867,13 +852,29 @@
                 opacity: 1,
                 fillOpacity: 0.8
             });
-
-            // Add popup to the marker
+            //             TPH Info
+            // Blok: C007A
+            // Ancak: 42
+            // TPH: 14
+            // Estate: NBE
+            // Afdeling: AFD-OA
+            // Update popup content untuk highlight marker
             window.highlightMarker.bindPopup(
-                `<b>Blok: ${coordinates.blok}
+                `<b>TPH Info</b>
+                <br>Blok: ${coordinates.blok}
+                <br>Ancak: ${coordinates.ancak}
                 <br>TPH: ${coordinates.tph}
                 <br>Estate: ${coordinates.estate}
-                <br>Afdeling: ${coordinates.afdeling}`
+                <br>Afdeling: ${coordinates.afdeling}
+                ${@this.user ? `
+                    <br><br>
+                    <button 
+                        wire:click="editTPH(${coordinates.id})"
+                        style="background: #4CAF50; color: white; padding: 4px 8px; 
+                        border: none; border-radius: 4px; cursor: pointer; margin-top: 8px;">
+                        Edit TPH
+                    </button>
+                ` : ''}`
             ).openPopup();
 
             // Add marker to map
