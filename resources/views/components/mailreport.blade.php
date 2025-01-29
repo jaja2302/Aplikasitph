@@ -1,7 +1,7 @@
 <div style="font-family: Arial, sans-serif;">
     <p>Dengan hormat,</p>
 
-    <p>Berikut kami lampirkan progress pengambilan TPH menggunakan Aplikasi Marker TPH sampai dengan {{ now()->format('d F Y') }}.</p>
+    <p>Berikut kami lampirkan progress pengambilan TPH menggunakan Aplikasi Marker TPH sampai dengan {{ \Carbon\Carbon::parse($latestUpdate)->locale('id')->isoFormat('D MMMM Y, [jam] HH:mm') }} WIB.</p>
 
     <table cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px;">
         <tr>

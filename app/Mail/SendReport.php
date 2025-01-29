@@ -15,12 +15,15 @@ class SendReport extends Mailable
     use Queueable, SerializesModels;
 
     public $reportData;
+    public $latestUpdate;
+
     /**
      * Create a new message instance.
      */
-    public function __construct($reportData)
+    public function __construct($reportData, $latestUpdate)
     {
         $this->reportData = $reportData;
+        $this->latestUpdate = $latestUpdate;
     }
 
     /**
@@ -41,6 +44,7 @@ class SendReport extends Mailable
         return new Content(
             view: 'components.mailreport',
             with: [
+                'latestUpdate' => $this->latestUpdate,
                 'reportData' => $this->reportData,
             ],
         );

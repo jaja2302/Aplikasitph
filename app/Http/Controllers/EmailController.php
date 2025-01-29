@@ -92,7 +92,7 @@ class EmailController extends Controller
                 ];
             })
             ->toArray();
-
+        // dd($reportData);
         try {
             $mail = Mail::to($request->to);
 
@@ -101,7 +101,11 @@ class EmailController extends Controller
                 $mail->cc($request->cc);
             }
 
-            $mail->send(new SendReport($reportData));
+            // Get latest update date
+            $latestUpdate = KoordinatatTph::orderBy('update_date', 'DESC')
+                ->value('update_date');
+
+            $mail->send(new SendReport($reportData, $latestUpdate));
 
             return response()->json([
                 'status' => 'success',
