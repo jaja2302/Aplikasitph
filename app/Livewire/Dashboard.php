@@ -64,6 +64,7 @@ class Dashboard extends Component
         $this->title = 'Maps TPH';
         $this->regional = Regional::all();
         $this->user = check_previlege(Auth::user()->user_id);
+        // dd($this->user);
         $this->coordinatesTPH = self::DEFAULT_GEOJSON;
     }
 
@@ -178,7 +179,7 @@ class Dashboard extends Component
     private function getBaseTPHQuery($est, $afdKey, $type, $blokName = null)
     {
         $query = KoordinatatTph::where('dept_abbr', $est)
-            ->where('divisi_abbr', $afdKey);
+            ->where('divisi_abbr', 'LIKE', '%' . $afdKey . '%');
 
         switch ($type) {
             case 'valid':
@@ -225,6 +226,7 @@ class Dashboard extends Component
                 'afdeling' => $point->divisi_abbr,
                 'blok' => $point->blok_kode,
                 'ancak' => $point->ancak,
+                'user_input' => $point->user_input,
                 'tph' => $point->nomor,
                 'status' => $point->status,
             ]
@@ -241,7 +243,8 @@ class Dashboard extends Component
         return [
             'estate' => $this->cachedEstateName,
             'afdeling' => $this->cachedAfdelingName,
-            'afdKey' => self::AFD_PREFIX . $this->cachedAfdelingName
+            'afdKey' => self::AFD_PREFIX . $this->cachedAfdelingName,
+            'afd_ori' => $this->cachedAfdelingName
         ];
     }
 
@@ -254,7 +257,7 @@ class Dashboard extends Component
         }
 
         $names = $this->getEstateAndAfdelingNames();
-        $tphQuery = $this->getBaseTPHQuery($names['estate'], $names['afdKey'], 'valid');
+        $tphQuery = $this->getBaseTPHQuery($names['estate'], $names['afd_ori'], 'valid');
 
         // Hanya filter berdasarkan blok jika selectedBlok ada dan bukan dalam mode reset
         if ($this->selectedBlok && !$this->focusOnTPHState) {
@@ -300,11 +303,14 @@ class Dashboard extends Component
 
         $bloks = $query->get()->groupBy('nama');
 
-        $est = Estate::find($this->selectedEstate)->est;
-        $afd = Afdeling::find($this->selectedAfdeling)->nama;
-        $afdKey = 'AFD' . '-' . $afd;
+        // $est = Estate::find($this->selectedEstate)->est;
+        // $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        // $afdKey = 'AFD' . '-' . $afd;
 
-        $blokTersidak = $this->getBlokTersidak($est, $afdKey);
+        $names = $this->getEstateAndAfdelingNames();
+        $blokTersidak = $this->getBlokTersidak($names['estate'], $names['afd_ori']);
+
+        // dd($blokTersidak);
 
         $features = $bloks->map(function ($blokGroup, $nama) use ($blokTersidak) {
             $coordinates = $blokGroup->map(function ($blok) {
@@ -542,6 +548,7 @@ class Dashboard extends Component
                 'estate' => $est,
                 'afdeling' => $afd,
                 'status' => $tph->status,
+                'user_input' => $tph->user_input,
                 'id' => $tph->id
             ]);
 
@@ -573,12 +580,12 @@ class Dashboard extends Component
             return;
         }
 
-        $est = Estate::find($this->selectedEstate)->est;
-        $afd = Afdeling::find($this->selectedAfdeling)->nama;
-        $afdKey = 'AFD' . '-' . $afd;
-
+        // $est = Estate::find($this->selectedEstate)->est;
+        // $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        // $afdKey = 'AFD' . '-' . $afd;
+        $names = $this->getEstateAndAfdelingNames();
         // get detail tph per blok
-        $tph_per_blok = $this->getBaseTPHQuery($est, $afdKey, 'all', $this->blokName)
+        $tph_per_blok = $this->getBaseTPHQuery($names['estate'], $names['afd_ori'], 'all', $this->blokName)
             ->select('blok_kode')
             ->selectRaw('COUNT(*) as total_tph')
             ->selectRaw("SUM(CASE WHEN lon = '-' OR lon = '' OR lon is null OR status != 1 THEN 1 ELSE 0 END) as unverified_tph")

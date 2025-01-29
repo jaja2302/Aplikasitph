@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Jabatan extends Model
 {
     use HasFactory;
-    protected $connection = 'mysql3';
+    // protected $connection = 'mysql3';
     protected $table = 'jabatan';
 
     protected $fillable = [

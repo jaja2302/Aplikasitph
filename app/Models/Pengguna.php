@@ -2,50 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class Pengguna extends Authenticatable
 {
-    use Notifiable;
+    use HasFactory, Notifiable;
 
-    protected $connection = 'mysql3';
     protected $table = 'pengguna';
-    protected $guarded = ['id'];
-    public $timestamps = false;
+    protected $primaryKey = 'user_id';
+    protected $guarded = ['user_id'];
 
-    /**
-     * Get the name of the unique identifier for the user.
-     *
-     * @return string
-     */
-    public function getAuthIdentifierName()
+    public function Departement()
     {
-        return 'user_id'; // sesuaikan dengan kolom primary key Anda
+        return $this->belongsToMany(Departement::class, 'department_user', 'user_id', 'department_id');
     }
-
-    /**
-     * Get the unique identifier for the user.
-     *
-     * @return mixed
-     */
-    public function getAuthIdentifier()
-    {
-        return $this->user_id; // sesuaikan dengan kolom primary key Anda
-    }
-
-    /**
-     * Get the password for the user.
-     *
-     * @return string
-     */
-    public function getAuthPassword()
-    {
-        return $this->password;
-    }
-
-    public function jabatanpengguna()
+    public function Jabatan()
     {
         return $this->belongsTo(Jabatan::class, 'id_jabatan', 'id');
     }
+
+    public $timestamps = false;
 }

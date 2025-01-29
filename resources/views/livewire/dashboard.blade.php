@@ -18,7 +18,7 @@
                                 <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                 </svg>
-                                Monitoring TPH
+                                Monitoring TPH @if($user) 'Bisa edit' @endif
                             </div>
                         </div>
                     </div>
@@ -327,7 +327,7 @@
     </div>
     @else
     <div class="bg-white shadow-sm rounded-lg p-6">
-        Tidak ada data
+        Tidak ada data TPH bisa ditampilkan
     </div>
     @endif
     @endif
@@ -585,11 +585,10 @@
                         let popupContent = `
                             <strong>TPH Info</strong><br>
                             Blok: ${feature.properties.blok}<br>
-                            Ancak: ${feature.properties.ancak}<br>
                             TPH: ${feature.properties.tph}<br>
                             Estate: ${feature.properties.estate}<br>
                             Afdeling: ${feature.properties.afdeling}<br>
-                          
+                            User Input: ${feature.properties.user_input}<br>
                         `;
 
                         // Only add edit button if user has privileges
@@ -862,10 +861,10 @@
             window.highlightMarker.bindPopup(
                 `<b>TPH Info</b>
                 <br>Blok: ${coordinates.blok}
-                <br>Ancak: ${coordinates.ancak}
                 <br>TPH: ${coordinates.tph}
                 <br>Estate: ${coordinates.estate}
                 <br>Afdeling: ${coordinates.afdeling}
+                <br>User Input: ${coordinates.user_input}
                 ${@this.user ? `
                     <br><br>
                     <button 
