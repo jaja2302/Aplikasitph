@@ -1,7 +1,8 @@
 <div style="font-family: Arial, sans-serif;">
     <p>Dengan hormat,</p>
 
-    <p>Berikut kami lampirkan progress pengambilan TPH menggunakan Aplikasi Marker TPH sampai dengan {{ \Carbon\Carbon::parse($latestUpdate)->locale('id')->isoFormat('D MMMM Y, [jam] HH:mm') }} WIB.</p>
+    <p>Berikut disampaikan laporan progress terkait pengambilan titik koordinat TPH menggunakan Aplikasi Marker TPH hingga {{ \Carbon\Carbon::parse($latestUpdate)->locale('id')->isoFormat('D MMMM Y, [pukul] HH:mm') }} WIB.</p>
+
 
     <table cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px;">
         <tr>
@@ -59,6 +60,6 @@
         </tr>
     </table>
 
-    <p>Demikian kami sampaikan, terima kasih.</p>
+    <p>Demikian laporan ini disampaikan. Atas perhatian dan kerja samanya, diucapkan terima kasih.</p>
     <p>Salam,</p>
 </div>

@@ -16,7 +16,15 @@ if (!function_exists('check_previlege')) {
         if (!$pengguna || !$pengguna->Jabatan) {
             return false;
         }
-        // dd($pengguna);
+
+        // Debugging output
+        // dd($pengguna->Departement);
+
+        if ($pengguna->Departement->isEmpty()) {
+            return false;
+        }
+
+
         // 1 = srs 
         $departementFamily = array_unique(GetDepartementFamily(1));
 
