@@ -9,3 +9,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/send-report', [EmailController::class, 'sendReport'])->name('send-report-api');
+
+Route::get('/test', [EmailController::class, 'sendReport'])->name('test-api');
