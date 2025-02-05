@@ -9,11 +9,14 @@ class Estate extends Model
 {
     use HasFactory;
     protected $connection = 'mysql2';
-    protected $table = 'estate';
+    protected $table = 'dept';
+    protected $primaryKey = 'id';
+    protected $guarded = ['id'];
+    public $timestamps = false;
 
     public function wilayah()
     {
-        return $this->belongsTo(Wilayah::class, 'wil', 'id');
+        return $this->belongsTo(Wilayah::class, 'wilayah', 'id');
     }
 
     public function afdelings()
@@ -23,6 +26,6 @@ class Estate extends Model
 
     public function estate_plots()
     {
-        return $this->hasMany(EstatePlot::class, 'est', 'est');
+        return $this->hasMany(EstatePlot::class, 'estate', 'id');
     }
 }

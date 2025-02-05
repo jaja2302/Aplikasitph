@@ -9,12 +9,16 @@ class Afdeling extends Model
 {
     use HasFactory;
     protected $connection = 'mysql2';
-    protected $table = 'afdeling';
-    public $timestamps = false;
+    protected $table = 'divisi';
+    protected $primaryKey = 'id';
     protected $guarded = ['id'];
+    public $timestamps = false;
+
+
+
     public function estate()
     {
-        return $this->belongsTo(Estate::class, 'estate', 'id');
+        return $this->belongsTo(Estate::class, 'dept', 'id');
     }
 
 

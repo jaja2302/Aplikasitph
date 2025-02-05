@@ -10,9 +10,12 @@ class Blok extends Model
     use HasFactory;
     protected $connection = 'mysql2';
     protected $table = 'blok';
+    protected $primaryKey = 'id';
+    protected $guarded = ['id'];
+    public $timestamps = false;
 
-    public function Afdeling()
+    public function afdeling()
     {
-        return $this->belongsTo(Afdeling::class, 'id', 'afdeling');
+        return $this->belongsTo(Afdeling::class, 'divisi', 'id');
     }
 }

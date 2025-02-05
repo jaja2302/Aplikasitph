@@ -9,6 +9,7 @@ use App\Models\Estate;
 use App\Models\Afdeling;
 use App\Models\EstatePlot;
 use App\Models\Blok;
+use App\Models\BlokPlot;
 use App\Models\KoordinatatTph;
 use Filament\Notifications\Notification;
 use Carbon\Carbon;
@@ -61,9 +62,11 @@ class Dashboard extends Component
 
     public function mount()
     {
+        // dd(check_previlege_cmp());
         $this->title = 'Maps TPH';
         $this->regional = Regional::all();
-        $this->user = check_previlege(Auth::user()->user_id);
+        // $this->user = check_previlege(Auth::user()->user_id);
+        $this->user = check_previlege_cmp();
         // dd($this->user);
         $this->coordinatesTPH = self::DEFAULT_GEOJSON;
     }
@@ -77,23 +80,24 @@ class Dashboard extends Component
     public function updatedSelectedWilayah()
     {
         $this->resetSelections('wilayah');
-        $this->estate = $this->selectedWilayah ? Estate::where('wil', $this->selectedWilayah)->where('emp', '!=', '1')->get() : [];
+        $this->estate = $this->selectedWilayah ? Estate::where('wilayah', $this->selectedWilayah)->where('status', '=', '1')->get() : [];
     }
 
     public function updatedSelectedEstate()
     {
         $this->resetSelections('estate');
-        $this->afdeling = $this->selectedEstate ? Afdeling::where('estate', $this->selectedEstate)->get() : [];
+        $this->afdeling = $this->selectedEstate ? Afdeling::where('dept', $this->selectedEstate)->where('status', '=', '1')->where('id_ppro', '!=', '0')->get() : [];
     }
 
     public function updatedSelectedAfdeling()
     {
         $this->isProcessing = true;
         $this->dispatch('show-loader');
-
         $this->resetSelections('afdeling');
-        $this->blok = $this->selectedAfdeling ? Blok::where('afdeling', $this->selectedAfdeling)->get()->unique('nama') : [];
 
+        // dd($this->selectedAfdeling);
+        $this->blok = $this->selectedAfdeling ? Blok::where('divisi', $this->selectedAfdeling)->get() : [];
+        // dd($this->selectedEstate, $this->selectedAfdeling, $this->blok);
         $this->dispatch('process-afdeling-update');
     }
 
@@ -178,8 +182,8 @@ class Dashboard extends Component
 
     private function getBaseTPHQuery($est, $afdKey, $type, $blokName = null)
     {
-        $query = KoordinatatTph::where('dept_abbr', $est)
-            ->where('divisi_abbr', 'LIKE', '%' . $afdKey . '%');
+        $query = KoordinatatTph::where('dept', $est)
+            ->where('divisi', 'LIKE', '%' . $afdKey . '%');
 
         switch ($type) {
             case 'valid':
@@ -237,8 +241,8 @@ class Dashboard extends Component
     private function getEstateAndAfdelingNames()
     {
         if (!$this->cachedEstateName) {
-            $this->cachedEstateName = Estate::find($this->selectedEstate)->est;
-            $this->cachedAfdelingName = Afdeling::find($this->selectedAfdeling)->nama;
+            $this->cachedEstateName =   $this->selectedEstate;
+            $this->cachedAfdelingName = $this->selectedAfdeling;
         }
         return [
             'estate' => $this->cachedEstateName,
@@ -257,16 +261,24 @@ class Dashboard extends Component
         }
 
         $names = $this->getEstateAndAfdelingNames();
+
+        // dd($names);
         $tphQuery = $this->getBaseTPHQuery($names['estate'], $names['afd_ori'], 'valid');
 
+        // dd($tphQuery);
         // Hanya filter berdasarkan blok jika selectedBlok ada dan bukan dalam mode reset
         if ($this->selectedBlok && !$this->focusOnTPHState) {
             $this->blokName = Blok::find($this->selectedBlok)->nama;
-            $tphQuery->where('blok_kode', 'LIKE', '%' . $this->blokName . '%');
+            // dd($this->blokName);
+            $tphQuery->where('blok_nama', $this->blokName);
+
+            // dd($tphQuery->get());
         }
 
+        // dd($tphQuery->get());
+
         // Optimize by selecting only needed fields
-        $tphPoints = $tphQuery->get(['id', 'dept_abbr', 'divisi_abbr', 'blok_kode', 'ancak', 'nomor', 'status', 'lat', 'lon', 'blok_kode', 'user_input']);
+        $tphPoints = $tphQuery->get(['id', 'dept_abbr', 'divisi_abbr', 'ancak', 'nomor', 'status', 'lat', 'lon', 'blok_kode', 'user_input']);
 
         $features = $tphPoints->map(fn($point) => $this->tphToGeoJsonFeature($point))->toArray();
 
@@ -277,10 +289,10 @@ class Dashboard extends Component
     private function getBlokTersidak($est, $afdKey)
     {
         return $this->getBaseTPHQuery($est, $afdKey, 'valid')
-            ->pluck('blok_kode')
-            ->map(function ($blok) {
-                return $this->normalizeBlockCode($blok);
-            })
+            ->pluck('blok_nama')
+            // ->map(function ($blok) {
+            //     return $this->normalizeBlockCode($blok);
+            // })
             ->unique()
             ->values()
             ->toArray();
@@ -293,21 +305,25 @@ class Dashboard extends Component
             $this->plotMap = [];
             return;
         }
-
-        $query = Blok::where('afdeling', $this->selectedAfdeling);
-
+        $name_blok = $this->blok->pluck('nama');
+        // dd($name_blok);
+        $query = BlokPlot::whereIn('nama', $name_blok);
+        // dd($query);
         if ($this->selectedBlok) {
             $selectedBlokNama = Blok::find($this->selectedBlok)->nama;
+            // dd($selectedBlokNama);
             $query->where('nama', $selectedBlokNama);
         }
 
         $bloks = $query->get()->groupBy('nama');
+        // dd($bloks);
 
         // $est = Estate::find($this->selectedEstate)->est;
         // $afd = Afdeling::find($this->selectedAfdeling)->nama;
         // $afdKey = 'AFD' . '-' . $afd;
 
         $names = $this->getEstateAndAfdelingNames();
+        // dd($names);
         $blokTersidak = $this->getBlokTersidak($names['estate'], $names['afd_ori']);
 
         // dd($blokTersidak);
@@ -318,7 +334,7 @@ class Dashboard extends Component
             })->toArray();
 
             $firstBlok = $blokGroup->first();
-
+            // dd($nama, $blokTersidak);
             return [
                 'type' => 'Feature',
                 'geometry' => [
@@ -328,12 +344,12 @@ class Dashboard extends Component
                 'properties' => [
                     'id' => $firstBlok->id,
                     'nama' => $nama,
-                    'luas' => $firstBlok->luas,
-                    'sph' => $firstBlok->sph,
-                    'bjr' => $firstBlok->bjr,
-                    'afdeling' => $firstBlok->afdeling,
+                    // 'luas' => $firstBlok->luas,
+                    // 'sph' => $firstBlok->sph,
+                    // 'bjr' => $firstBlok->bjr,
+                    // 'afdeling' => $firstBlok->afdeling,
                     // 'status' => $firstBlok->status,
-                    'tersidak' => in_array($this->normalizeBlockCode($nama), $blokTersidak)
+                    'tersidak' => in_array($nama, $blokTersidak)
                 ]
             ];
         })->values()->toArray();
@@ -526,12 +542,12 @@ class Dashboard extends Component
             return;
         }
 
-        $est = Estate::find($this->selectedEstate)->est;
-        $afd = Afdeling::find($this->selectedAfdeling)->nama;
-        $afdKey = 'AFD' . '-' . $afd;
+        // $est = Estate::find($this->selectedEstate)->est;
+        // $afd = Afdeling::find($this->selectedAfdeling)->nama;
+        // $afdKey = 'AFD' . '-' . $afd;
 
-        $tph = KoordinatatTph::where('dept_abbr', $est)
-            ->where('divisi_abbr', $afdKey)
+        $tph = KoordinatatTph::where('dept', $this->selectedEstate)
+            ->where('divisi', $this->selectedAfdeling)
             ->where('blok_kode', $blok)
             ->where('nomor', $tphNumber)
             ->where('status', 1)
@@ -545,8 +561,8 @@ class Dashboard extends Component
                 'blok' => $blok,
                 'ancak' => $tph->ancak,
                 'tph' => $tphNumber,
-                'estate' => $est,
-                'afdeling' => $afd,
+                'estate' => $this->selectedEstate,
+                'afdeling' => $this->selectedAfdeling,
                 'status' => $tph->status,
                 'user_input' => $tph->user_input,
                 'id' => $tph->id

@@ -9,7 +9,10 @@ class Wilayah extends Model
 {
     use HasFactory;
     protected $connection = 'mysql2';
-    protected $table = 'wil';
+    protected $table = 'wilayah';
+    protected $primaryKey = 'id';
+    protected $guarded = ['id'];
+    public $timestamps = false;
 
     public function regional()
     {
@@ -18,6 +21,6 @@ class Wilayah extends Model
 
     public function estates()
     {
-        return $this->hasMany(Estate::class, 'wil', 'id');
+        return $this->hasMany(Estate::class, 'wilayah', 'id');
     }
 }

@@ -3,8 +3,8 @@
 use App\Models\Departement;
 use App\Models\Jabatan;
 use App\Models\Pengguna;
-
-
+use App\Models\SysUser;
+use Illuminate\Support\Facades\Auth;
 
 if (!function_exists('check_previlege')) {
     function check_previlege($user_id)
@@ -56,5 +56,17 @@ if (!function_exists('GetDepartementFamily')) {
             return $childDepartments;
         };
         return $getChildDepartments($parentId, $allDepartments);
+    }
+}
+
+
+if (!function_exists('check_previlege_cmp')) {
+    function check_previlege_cmp()
+    {
+        $user_jabatan = Auth::user()->jabatan;
+        if ($user_jabatan == 'Asisten') {
+            return true;
+        }
+        return false;
     }
 }

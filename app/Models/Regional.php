@@ -9,7 +9,11 @@ class Regional extends Model
 {
     use HasFactory;
     protected $connection = 'mysql2';
-    protected $table = 'reg';
+    protected $table = 'regional';
+    protected $primaryKey = 'id';
+    protected $guarded = ['id'];
+
+    public $timestamps = false;
 
     public function wilayahs()
     {

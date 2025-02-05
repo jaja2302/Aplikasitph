@@ -38,7 +38,7 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'sys_users',
         ],
         'pengguna' => [
             'driver' => 'session',
@@ -71,6 +71,10 @@ return [
         'penggunas' => [
             'driver' => 'eloquent',
             'model' => App\Models\Pengguna::class,
+        ],
+        'sys_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\SysUser::class,
         ],
     ],
 
