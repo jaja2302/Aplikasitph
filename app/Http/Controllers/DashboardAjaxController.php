@@ -7,10 +7,7 @@ use App\Models\Wilayah;
 use App\Models\Estate;
 use App\Models\Afdeling;
 use App\Models\Blok;
-use App\Models\BlokPlot;
-use App\Models\KoordinatatTph;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Services\TPHService;
 
 class DashboardAjaxController extends Controller
@@ -63,19 +60,22 @@ class DashboardAjaxController extends Controller
         return response()->json($blok);
     }
 
-    public function getPlotMap($afdelingId)
+    public function getPlotMap($afdelingId, Request $request)
     {
-        return response()->json($this->tphService->getPlotMap($afdelingId));
+        $blokNama = $request->query('blokNama');
+        return response()->json($this->tphService->getPlotMap($afdelingId, $blokNama));
     }
 
-    public function getTPHCoordinates($estateId, $afdelingId)
+    public function getTPHCoordinates($estateId, $afdelingId, Request $request)
     {
-        return response()->json($this->tphService->getTPHCoordinates($estateId, $afdelingId));
+        $blokNama = $request->query('blokNama');
+        return response()->json($this->tphService->getTPHCoordinates($estateId, $afdelingId, $blokNama));
     }
 
-    public function getLegendInfo($estateId, $afdelingId)
+    public function getLegendInfo($estateId, $afdelingId, Request $request)
     {
-        return response()->json($this->tphService->getLegendInfo($estateId, $afdelingId));
+        $blokNama = $request->query('blokNama');
+        return response()->json($this->tphService->getLegendInfo($estateId, $afdelingId, $blokNama));
     }
 
     public function updateTPH(Request $request, $id)

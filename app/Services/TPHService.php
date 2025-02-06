@@ -76,19 +76,24 @@ class TPHService
             ->toArray();
     }
 
-    public function getPlotMap($afdelingId)
+    public function getPlotMap($afdelingId, $selectedBlokNama = null)
     {
         $blok = Blok::where('divisi', $afdelingId)->get();
         $name_blok = $blok->pluck('nama');
 
         $query = BlokPlot::whereIn('nama', $name_blok);
+
+        // Filter by selected blok if provided
+        if ($selectedBlokNama) {
+            $query->where('nama', $selectedBlokNama);
+        }
+
         $bloks = $query->get()->groupBy('nama');
 
         $afdeling = Afdeling::find($afdelingId);
         $estate = Estate::find($afdeling->dept);
 
         $blokTersidak = $this->getBlokTersidak($estate->id, $afdeling->id);
-        // dd($blokTersidak, $estate->id, $afdeling->id);
 
         $features = $bloks->map(function ($blokGroup, $nama) use ($blokTersidak) {
             $coordinates = $blokGroup->map(function ($blok) {
@@ -109,22 +114,22 @@ class TPHService
                 ]
             ];
         })->values()->toArray();
-        // dd($features);
+
         return [
             'type' => 'FeatureCollection',
             'features' => $features
         ];
     }
 
-    public function getTPHCoordinates($estateId, $afdelingId)
+    public function getTPHCoordinates($estateId, $afdelingId, $selectedBlokNama = null)
     {
-
         $tphQuery = $this->getBaseTPHQuery($estateId, $afdelingId, 'valid');
-        // dd([
-        //     "koordinat" => $tphQuery->get(),
-        //     "estate" => $estateId,
-        //     "afd" => $afdelingId
-        // ]);
+
+        // Filter by selected blok if provided
+        if ($selectedBlokNama) {
+            $tphQuery->where('blok_nama', $selectedBlokNama);
+        }
+
         $tphPoints = $tphQuery->get([
             'id',
             'dept_abbr',
@@ -139,21 +144,27 @@ class TPHService
         ]);
 
         $features = $tphPoints->map(fn($point) => $this->tphToGeoJsonFeature($point))->toArray();
-        // dd($features, $estate, $afdeling);
+
         return [
             'type' => 'FeatureCollection',
             'features' => $features
         ];
     }
 
-    public function getLegendInfo($estateId, $afdelingId)
+    public function getLegendInfo($estateId, $afdelingId, $selectedBlokNama = null)
     {
         $estate = Estate::find($estateId);
         $afdeling = Afdeling::find($afdelingId);
 
-        $tph_per_blok = KoordinatatTph::where('dept', $estate->id)
-            ->where('divisi', $afdeling->id)
-            ->select('blok_kode')
+        $query = KoordinatatTph::where('dept', $estate->id)
+            ->where('divisi', $afdeling->id);
+
+        // Filter by selected blok if provided
+        if ($selectedBlokNama) {
+            $query->where('blok_nama', $selectedBlokNama);
+        }
+
+        $tph_per_blok = $query->select('blok_kode')
             ->selectRaw('COUNT(*) as total_tph')
             ->selectRaw("SUM(CASE WHEN lon = '-' OR lon = '' OR lon is null OR status != 1 THEN 1 ELSE 0 END) as unverified_tph")
             ->selectRaw("SUM(CASE WHEN status = 1 AND lat != '-' AND lon != '-' THEN 1 ELSE 0 END) as verified_tph")

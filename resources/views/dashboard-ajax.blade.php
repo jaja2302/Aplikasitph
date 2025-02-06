@@ -423,7 +423,7 @@
             }
 
             // Map update functions
-            async function updatePlotLayer(afdelingId) {
+            async function updatePlotLayer(afdelingId, selectedBlokNama = null) {
                 if (plotLayer) {
                     map.removeLayer(plotLayer);
                     plotLayer = null;
@@ -432,7 +432,12 @@
                 labelMarkers.forEach(marker => map.removeLayer(marker));
                 labelMarkers = [];
 
-                const data = await fetchData(`{{ route('dashboard.plot-map', ['afdelingId' => ':afdelingId']) }}`.replace(':afdelingId', afdelingId));
+                const url = new URL(`{{ route('dashboard.plot-map', ['afdelingId' => ':afdelingId']) }}`.replace(':afdelingId', afdelingId));
+                if (selectedBlokNama) {
+                    url.searchParams.append('blokNama', selectedBlokNama);
+                }
+
+                const data = await fetchData(url);
 
                 if (data && data.features) {
                     plotLayer = L.geoJSON(data, {
@@ -506,15 +511,21 @@
                 }
             }
 
-            async function updateTPHMarkers(estateId, afdelingId) {
+            async function updateTPHMarkers(estateId, afdelingId, selectedBlokNama = null) {
                 if (tphLayer) {
                     map.removeLayer(tphLayer);
                     tphLayer = null;
                 }
 
-                const data = await fetchData(`{{ route('dashboard.tph-coordinates', ['estateId' => ':estateId', 'afdelingId' => ':afdelingId']) }}`
+                const url = new URL(`{{ route('dashboard.tph-coordinates', ['estateId' => ':estateId', 'afdelingId' => ':afdelingId']) }}`
                     .replace(':estateId', estateId)
                     .replace(':afdelingId', afdelingId));
+
+                if (selectedBlokNama) {
+                    url.searchParams.append('blokNama', selectedBlokNama);
+                }
+
+                const data = await fetchData(url);
 
                 if (data && Array.isArray(data.features) && data.features.length > 0) {
                     tphLayer = L.featureGroup();
@@ -598,7 +609,13 @@
                 const blokId = this.value;
                 if (blokId) {
                     showLoader();
-                    // Add specific blok filtering logic here if needed
+                    // Get blok nama from selected option
+                    const selectedBlokNama = this.options[this.selectedIndex].text;
+
+                    // Update all layers with selected blok
+                    await updatePlotLayer(afdelingSelect.value, selectedBlokNama);
+                    await updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama);
+                    await updateLegendInfo(estateSelect.value, afdelingSelect.value, selectedBlokNama);
                     hideLoader();
                 }
             });
@@ -679,40 +696,43 @@
             // Initialize
             populateRegional();
 
-            function updateLegendInfo(estateId, afdelingId) {
-                fetch(`{{ route('dashboard.legend-info', ['estateId' => ':estateId', 'afdelingId' => ':afdelingId']) }}`
-                        .replace(':estateId', estateId)
-                        .replace(':afdelingId', afdelingId))
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('legendInfo').classList.remove('hidden');
-                        document.getElementById('estateName').textContent = data.estate_name;
-                        document.getElementById('afdelingName').textContent = data.afdeling_name;
+            async function updateLegendInfo(estateId, afdelingId, selectedBlokNama = null) {
+                const url = new URL(`{{ route('dashboard.legend-info', ['estateId' => ':estateId', 'afdelingId' => ':afdelingId']) }}`
+                    .replace(':estateId', estateId)
+                    .replace(':afdelingId', afdelingId));
 
-                        // Update stats
-                        document.getElementById('totalBlok').textContent = data.total_blok_name_count;
-                        document.getElementById('verifiedBlok').textContent = data.verifiedblokcount;
-                        document.getElementById('unverifiedBlok').textContent = data.unveridblokcount;
+                if (selectedBlokNama) {
+                    url.searchParams.append('blokNama', selectedBlokNama);
+                }
 
-                        document.getElementById('totalTPH').textContent = data.total_tph;
-                        document.getElementById('verifiedTPH').textContent = data.total_tph_verif;
-                        document.getElementById('unverifiedTPH').textContent = data.total_tph_unverif;
+                const data = await fetchData(url);
+                document.getElementById('legendInfo').classList.remove('hidden');
+                document.getElementById('estateName').textContent = data.estate_name;
+                document.getElementById('afdelingName').textContent = data.afdeling_name;
 
-                        document.getElementById('progressPercentage').textContent = `${data.progress_percentage}%`;
-                        document.getElementById('progressBar').style.width = `${data.progress_percentage}%`;
+                // Update stats
+                document.getElementById('totalBlok').textContent = data.total_blok_name_count;
+                document.getElementById('verifiedBlok').textContent = data.verifiedblokcount;
+                document.getElementById('unverifiedBlok').textContent = data.unveridblokcount;
 
-                        // Update petugas list
-                        const petugasList = document.getElementById('petugasList');
-                        petugasList.innerHTML = data.user_input.map(user => `
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                                <span class="text-sm text-gray-600">${user}</span>
-                            </div>
-                        `).join('');
+                document.getElementById('totalTPH').textContent = data.total_tph;
+                document.getElementById('verifiedTPH').textContent = data.total_tph_verif;
+                document.getElementById('unverifiedTPH').textContent = data.total_tph_unverif;
 
-                        // Update blok lists
-                        updateBlokLists(data.tph_detail_per_blok);
-                    });
+                document.getElementById('progressPercentage').textContent = `${data.progress_percentage}%`;
+                document.getElementById('progressBar').style.width = `${data.progress_percentage}%`;
+
+                // Update petugas list
+                const petugasList = document.getElementById('petugasList');
+                petugasList.innerHTML = data.user_input.map(user => `
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                        <span class="text-sm text-gray-600">${user}</span>
+                    </div>
+                `).join('');
+
+                // Update blok lists
+                updateBlokLists(data.tph_detail_per_blok);
             }
 
             function updateBlokLists(tphDetailPerBlok) {
