@@ -570,8 +570,11 @@
                 const regionalId = this.value;
                 if (regionalId) {
                     showLoader();
-                    await populateWilayah(regionalId);
-                    hideLoader();
+                    try {
+                        await populateWilayah(regionalId);
+                    } finally {
+                        hideLoader();
+                    }
                 }
             });
 
@@ -579,8 +582,11 @@
                 const wilayahId = this.value;
                 if (wilayahId) {
                     showLoader();
-                    await populateEstate(wilayahId);
-                    hideLoader();
+                    try {
+                        await populateEstate(wilayahId);
+                    } finally {
+                        hideLoader();
+                    }
                 }
             });
 
@@ -588,8 +594,11 @@
                 const estateId = this.value;
                 if (estateId) {
                     showLoader();
-                    await populateAfdeling(estateId);
-                    hideLoader();
+                    try {
+                        await populateAfdeling(estateId);
+                    } finally {
+                        hideLoader();
+                    }
                 }
             });
 
@@ -597,11 +606,18 @@
                 const afdelingId = this.value;
                 if (afdelingId) {
                     showLoader();
-                    await populateBlok(afdelingId);
-                    await updatePlotLayer(afdelingId);
-                    await updateTPHMarkers(estateSelect.value, afdelingId);
-                    await updateLegendInfo(estateSelect.value, afdelingId);
-                    hideLoader();
+                    try {
+                        await Promise.all([
+                            populateBlok(afdelingId),
+                            updatePlotLayer(afdelingId),
+                            updateTPHMarkers(estateSelect.value, afdelingId),
+                            updateLegendInfo(estateSelect.value, afdelingId)
+                        ]);
+                    } catch (error) {
+                        console.error('Error updating data:', error);
+                    } finally {
+                        hideLoader();
+                    }
                 }
             });
 
@@ -609,14 +625,18 @@
                 const blokId = this.value;
                 if (blokId) {
                     showLoader();
-                    // Get blok nama from selected option
-                    const selectedBlokNama = this.options[this.selectedIndex].text;
-
-                    // Update all layers with selected blok
-                    await updatePlotLayer(afdelingSelect.value, selectedBlokNama);
-                    await updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama);
-                    await updateLegendInfo(estateSelect.value, afdelingSelect.value, selectedBlokNama);
-                    hideLoader();
+                    try {
+                        const selectedBlokNama = this.options[this.selectedIndex].text;
+                        await Promise.all([
+                            updatePlotLayer(afdelingSelect.value, selectedBlokNama),
+                            updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama),
+                            updateLegendInfo(estateSelect.value, afdelingSelect.value, selectedBlokNama)
+                        ]);
+                    } catch (error) {
+                        console.error('Error updating data:', error);
+                    } finally {
+                        hideLoader();
+                    }
                 }
             });
 

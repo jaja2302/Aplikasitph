@@ -13,25 +13,24 @@
 
     <!-- Icons -->
     <link rel="icon" href="{{ asset('images/CBIpreview.png') }}">
+
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @filamentStyles
-    @livewireStyles
     @stack('styles')
 
     <!-- Scripts -->
-    @livewireScripts
-    @filamentScripts
     @stack('scripts')
-
-    @livewire('notifications')
 
 </head>
 
 <body class="h-full font-sans antialiased">
     <!-- Page Loader -->
-    <x-loader text="Mohon Tunggu..." size="w-20 h-20" />
-
+    <div id="loader" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white bg-opacity-75">
+        <div class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-20 w-20 border-b-2 border-green-600"></div>
+            <span class="mt-4 text-gray-600">Mohon Tunggu...</span>
+        </div>
+    </div>
 
     <!-- Flash Messages -->
     @if (session()->has('message'))
@@ -61,12 +60,6 @@
                         <a href="{{ route('dashboard') }}"
                             class="{{ request()->routeIs('dashboard') ? 'border-green-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Dashboard
-                        </a>
-                    </div>
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="{{ route('dashboard.ajax') }}"
-                            class="{{ request()->routeIs('dashboard.ajax') ? 'border-green-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Dashboard (ajax)
                         </a>
                     </div>
                 </div>
@@ -107,14 +100,25 @@
     {{$slot}}
     @endauth
 
-    <script type="module">
-        // Tampilkan loader saat halaman mulai dimuat
-        document.addEventListener('DOMContentLoaded', () => {
-            showLoader();
-            // Sembunyikan loader setelah semua konten dimuat
-            window.addEventListener('load', () => {
-                hideLoader();
-            });
+    <script>
+        // Global loader functions
+        window.showLoader = function() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.display = 'flex';
+            }
+        }
+
+        window.hideLoader = function() {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.style.display = 'none';
+            }
+        }
+
+        // Hide loader when page is fully loaded
+        window.addEventListener('load', function() {
+            hideLoader();
         });
     </script>
 </body>

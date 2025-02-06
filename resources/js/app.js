@@ -12,6 +12,7 @@ import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet-search/dist/leaflet-search.min.css';
 import 'leaflet-search';
+
 // Fix untuk icon Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -23,29 +24,17 @@ L.Icon.Default.mergeOptions({
 // Make Leaflet available globally
 window.L = L;
 
-// Update fungsi global loading
-window.showLoader = () => {
-    window.dispatchEvent(new Event('show-loader'));
+// Global loader functions
+window.showLoader = function() {
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.style.display = 'flex';
+    }
 };
 
-window.hideLoader = () => {
-    window.dispatchEvent(new Event('hide-loader'));
+window.hideLoader = function() {
+    const loader = document.getElementById('loader');
+    if (loader) {
+        loader.style.display = 'none';
+    }
 };
-
-// Tambahkan ini untuk menangani navigasi
-document.addEventListener('livewire:navigating', () => {
-    showLoader();
-});
-
-document.addEventListener('livewire:navigated', () => {
-    hideLoader();
-});
-
-// Untuk AJAX requests
-document.addEventListener('livewire:loading.state.before', () => {
-    showLoader();
-});
-
-document.addEventListener('livewire:loading.state.after', () => {
-    hideLoader();
-});

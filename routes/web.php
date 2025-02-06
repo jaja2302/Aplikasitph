@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthUserCmpController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardAjaxController;
-use App\Livewire\Dashboard;
+use App\Http\Controllers\DashboardController;
 
 // Guest routes (only accessible when not logged in)
 Route::middleware('guest')->group(function () {
@@ -14,9 +14,8 @@ Route::middleware('guest')->group(function () {
 
 // Auth routes (only accessible when logged in)
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', Dashboard::class)->name('dashboard');
     Route::post('/logout', [AuthUserCmpController::class, 'logout'])->name('logout');
-    Route::get('/dashboard-ajax', [DashboardAjaxController::class, 'index'])->name('dashboard.ajax');
+    Route::get('/dashboard', [DashboardAjaxController::class, 'index'])->name('dashboard');
 
     // Changed from API routes to named routes
     Route::get('/dashboard/regional', [DashboardAjaxController::class, 'getRegional'])->name('dashboard.regional');

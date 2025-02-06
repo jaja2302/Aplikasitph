@@ -167,9 +167,9 @@ class TPHService
         $tph_per_blok = $query->select('blok_kode')
             ->selectRaw('COUNT(*) as total_tph')
             ->selectRaw("SUM(CASE WHEN lon = '-' OR lon = '' OR lon is null OR status != 1 THEN 1 ELSE 0 END) as unverified_tph")
-            ->selectRaw("SUM(CASE WHEN status = 1 AND lat != '-' AND lon != '-' THEN 1 ELSE 0 END) as verified_tph")
+            ->selectRaw("SUM(CASE WHEN status = 1 AND lat != '-' AND lat != '' THEN 1 ELSE 0 END) as verified_tph")
             ->selectRaw("GROUP_CONCAT(CASE WHEN lon = '-' OR lon = '' OR lon is null OR status != 1 THEN nomor ELSE NULL END) as unverified_tph_numbers")
-            ->selectRaw("GROUP_CONCAT(CASE WHEN status = 1 AND lat != '-' AND lon != '-' THEN nomor ELSE NULL END) as verified_tph_numbers")
+            ->selectRaw("GROUP_CONCAT(CASE WHEN status = 1 AND lat != '-' AND lat != '' THEN nomor ELSE NULL END) as verified_tph_numbers")
             ->groupBy('blok_kode')
             ->get();
 
@@ -185,6 +185,13 @@ class TPHService
 
         $unveridblokcount = $total_blok_name_count - $verifiedCount;
         $progressPercentage = $total_tph > 0 ? round(($total_tph_verif / $total_tph) * 100, 1) : 0;
+
+        // dd([
+        //     'progressPercentage' => $progressPercentage,
+        //     'total_tph' => $total_tph,
+        //     'total_tph_verif' => $total_tph_verif,
+        //     'total_tph_unverif' => $total_tph_unverif
+        // ]);
 
         $user_input = KoordinatatTph::where('dept', $estate->id)
             ->where('divisi', $afdeling->id)
