@@ -58,8 +58,15 @@
                     </div>
                     <!-- Navigation Links -->
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="#" class="border-green-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                        <a href="{{ route('dashboard') }}"
+                            class="{{ request()->routeIs('dashboard') ? 'border-green-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Dashboard
+                        </a>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{{ route('dashboard.ajax') }}"
+                            class="{{ request()->routeIs('dashboard.ajax') ? 'border-green-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Dashboard (ajax)
                         </a>
                     </div>
                 </div>
@@ -93,12 +100,11 @@
     @auth
     <div class="min-h-screen bg-gray-50">
         <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            {{ $slot }}
+            {{$slot}}
         </main>
     </div>
     @else
-    <!-- Full screen content for login -->
-    {{ $slot }}
+    {{$slot}}
     @endauth
 
     <script type="module">

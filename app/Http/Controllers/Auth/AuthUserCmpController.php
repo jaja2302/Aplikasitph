@@ -13,6 +13,12 @@ class AuthUserCmpController extends Controller
 
     public function showLoginForm()
     {
+        // If user is already logged in, redirect to dashboard
+        if (Auth::check()) {
+            return redirect('/dashboard');
+        }
+
+        // dd('puki');
         return view('auth.login');
     }
 

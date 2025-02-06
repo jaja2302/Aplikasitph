@@ -183,7 +183,7 @@ class Dashboard extends Component
     private function getBaseTPHQuery($est, $afdKey, $type, $blokName = null)
     {
         $query = KoordinatatTph::where('dept', $est)
-            ->where('divisi', 'LIKE', '%' . $afdKey . '%');
+            ->where('divisi', $afdKey);
 
         switch ($type) {
             case 'valid':
@@ -600,6 +600,14 @@ class Dashboard extends Component
         // $afd = Afdeling::find($this->selectedAfdeling)->nama;
         // $afdKey = 'AFD' . '-' . $afd;
         $names = $this->getEstateAndAfdelingNames();
+        // dd($names, $this->blokName);
+        //         array:4 [▼ // app\Livewire\Dashboard.php:603
+        //   "estate" => "112"
+        //   "afdeling" => "87"
+        //   "afdKey" => "AFD-87"
+        //   "afd_ori" => "87"
+        // ]
+
         // get detail tph per blok
         $tph_per_blok = $this->getBaseTPHQuery($names['estate'], $names['afd_ori'], 'all', $this->blokName)
             ->select('blok_kode')
