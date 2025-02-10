@@ -69,8 +69,8 @@
                     <div class="flex-shrink-0 relative ml-5">
                         <div class="flex items-center">
                             <div class="mr-3 text-right">
-                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->nama }}</p>
-                                <p class="text-xs text-gray-500">{{ Auth::user()->jabatan }}</p>
+                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->nama_lengkap }}</p>
+                                <p class="text-xs text-gray-500">{{ Auth::user()->Jabatan->nama ?? '-' }}</p>
                             </div>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf

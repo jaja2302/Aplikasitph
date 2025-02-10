@@ -47,9 +47,10 @@ class DashboardAjaxController extends Controller
 
     public function getAfdeling($estateId)
     {
+        // dd($estateId);
         $afdeling = Afdeling::where('dept', $estateId)
             ->where('status', '=', '1')
-            ->where('id_ppro', '!=', '0')
+            // ->where('id_ppro', '!=', '0')
             ->get();
         return response()->json($afdeling);
     }

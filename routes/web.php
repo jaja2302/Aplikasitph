@@ -5,16 +5,16 @@ use App\Http\Controllers\Auth\AuthUserCmpController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardAjaxController;
 use App\Http\Controllers\DashboardController;
-
+use App\Http\Controllers\Auth\AuthPenggunaController;
 // Guest routes (only accessible when not logged in)
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthUserCmpController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthUserCmpController::class, 'login'])->name('login.submit');
+Route::middleware('guest:pengguna')->group(function () {
+    Route::get('/login', [AuthPenggunaController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthPenggunaController::class, 'login'])->name('login.submit');
 });
 
 // Auth routes (only accessible when logged in)
-Route::middleware('auth')->group(function () {
-    Route::post('/logout', [AuthUserCmpController::class, 'logout'])->name('logout');
+Route::middleware('auth:pengguna')->group(function () {
+    Route::post('/logout', [AuthPenggunaController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardAjaxController::class, 'index'])->name('dashboard');
 
     // Changed from API routes to named routes

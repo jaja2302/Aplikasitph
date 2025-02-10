@@ -12,7 +12,7 @@
                         </div>
                         <div class="ml-4">
                             <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                                Maps TPH (Ajax Version)
+                                Maps TPH
                             </h2>
                         </div>
                     </div>

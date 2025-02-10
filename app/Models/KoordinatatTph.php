@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class KoordinatatTph extends Model
 {
     //
-    protected $connection = 'mysql2';
+    protected $connection = 'mysql3';
     protected $table = 'tph';
     protected $primaryKey = 'id';
     protected $guarded = ['id'];
