@@ -53,8 +53,8 @@ class EmailController extends Controller
 
         // Group estates by regional with their TPH statistics
         $reportData = Wilayah::with(['estates' => function ($query) {
-            $query->where('emp', '!=', 1)
-                ->whereNotIn('est', ['GDE', 'BGE', 'SRE', 'LDE', 'BWE', 'MKE', 'PKE', 'BSE']);
+            $query->where('status', '=', '1')
+                ->whereNotIn('abbr', ['GDE', 'BGE', 'SRE', 'LDE', 'BWE', 'MKE', 'PKE', 'BSE']);
         }])
             ->whereIn('regional', [1, 2, 3])
             ->get()
@@ -62,7 +62,7 @@ class EmailController extends Controller
             ->map(function ($region) use ($tphStats) {
                 return $region->pluck('estates')
                     ->flatten()
-                    ->pluck('est')
+                    ->pluck('abbr')
                     ->flip()
                     ->map(function ($_, $estateCode) use ($tphStats) {
                         return $tphStats[$estateCode] ?? [
