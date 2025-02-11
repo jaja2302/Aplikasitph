@@ -408,7 +408,7 @@
                 const data = await fetchData(`{{ route('dashboard.afdeling', ['estateId' => ':estateId']) }}`.replace(':estateId', estateId));
                 afdelingSelect.innerHTML = '<option value="">Pilih Afdeling</option>';
                 data.forEach(item => {
-                    afdelingSelect.innerHTML += `<option value="${item.id}">${item.nama}</option>`;
+                    afdelingSelect.innerHTML += `<option value="${item.id}">${item.abbr}</option>`;
                 });
                 afdelingSelect.disabled = false;
             }
@@ -423,6 +423,61 @@
             }
 
             // Map update functions
+
+            async function updateTPHMarkers(estateId, afdelingId, selectedBlokNama = null) {
+                if (tphLayer) {
+                    map.removeLayer(tphLayer);
+                    tphLayer = null;
+                }
+
+                const url = new URL(`{{ route('dashboard.tph-coordinates', ['estateId' => ':estateId', 'afdelingId' => ':afdelingId']) }}`
+                    .replace(':estateId', estateId)
+                    .replace(':afdelingId', afdelingId));
+
+                if (selectedBlokNama) {
+                    url.searchParams.append('blokNama', selectedBlokNama);
+                }
+
+                const data = await fetchData(url);
+
+                if (data && Array.isArray(data.features) && data.features.length > 0) {
+                    tphLayer = L.featureGroup();
+
+                    L.geoJSON(data, {
+                        pointToLayer: function(feature, latlng) {
+                            const markerColor = feature.properties.status === 1 ? "#4CAF50" : "#FF0000";
+                            return L.circleMarker(latlng, {
+                                radius: 8,
+                                fillColor: markerColor,
+                                color: "#000",
+                                weight: 1,
+                                opacity: 1,
+                                fillOpacity: 0.8
+                            });
+                        },
+                        onEachFeature: function(feature, layer) {
+                            const popupContent = `
+                        <strong>TPH Info</strong><br>
+                        Blok: ${feature.properties.blok}<br>
+                        TPH: ${feature.properties.tph}<br>
+                        Estate: ${feature.properties.estate}<br>
+                        Afdeling: ${feature.properties.afdeling}<br>
+                        User Input: ${feature.properties.user_input}<br>
+                        ${window.userHasPrivileges ? `
+                            <button onclick="editTPH(${feature.properties.id})"
+                                class="bg-green-600 text-white px-3 py-1 rounded mt-2 text-sm hover:bg-green-700">
+                                Edit TPH
+                            </button>
+                        ` : ''}
+                    `;
+                            layer.bindPopup(popupContent);
+                        }
+                    }).addTo(tphLayer);
+
+                    map.addLayer(tphLayer);
+                }
+            }
+
             async function updatePlotLayer(afdelingId, selectedBlokNama = null) {
                 if (plotLayer) {
                     map.removeLayer(plotLayer);
@@ -439,7 +494,7 @@
 
                 const data = await fetchData(url);
 
-                if (data && data.features) {
+                if (data && data.features && data.features.length > 0) {
                     plotLayer = L.geoJSON(data, {
                         style: function(feature) {
                             const isTersidak = feature.properties.tersidak;
@@ -506,62 +561,38 @@
                         }
                     }).addTo(map);
 
-                    const bounds = plotLayer.getBounds();
-                    map.fitBounds(bounds);
-                }
-            }
-
-            async function updateTPHMarkers(estateId, afdelingId, selectedBlokNama = null) {
-                if (tphLayer) {
-                    map.removeLayer(tphLayer);
-                    tphLayer = null;
-                }
-
-                const url = new URL(`{{ route('dashboard.tph-coordinates', ['estateId' => ':estateId', 'afdelingId' => ':afdelingId']) }}`
-                    .replace(':estateId', estateId)
-                    .replace(':afdelingId', afdelingId));
-
-                if (selectedBlokNama) {
-                    url.searchParams.append('blokNama', selectedBlokNama);
-                }
-
-                const data = await fetchData(url);
-
-                if (data && Array.isArray(data.features) && data.features.length > 0) {
-                    tphLayer = L.featureGroup();
-
-                    L.geoJSON(data, {
-                        pointToLayer: function(feature, latlng) {
-                            const markerColor = feature.properties.status === 1 ? "#4CAF50" : "#FF0000";
-                            return L.circleMarker(latlng, {
-                                radius: 8,
-                                fillColor: markerColor,
-                                color: "#000",
-                                weight: 1,
-                                opacity: 1,
-                                fillOpacity: 0.8
-                            });
-                        },
-                        onEachFeature: function(feature, layer) {
-                            const popupContent = `
-                        <strong>TPH Info</strong><br>
-                        Blok: ${feature.properties.blok}<br>
-                        TPH: ${feature.properties.tph}<br>
-                        Estate: ${feature.properties.estate}<br>
-                        Afdeling: ${feature.properties.afdeling}<br>
-                        User Input: ${feature.properties.user_input}<br>
-                        ${window.userHasPrivileges ? `
-                            <button onclick="editTPH(${feature.properties.id})"
-                                class="bg-green-600 text-white px-3 py-1 rounded mt-2 text-sm hover:bg-green-700">
-                                Edit TPH
-                            </button>
-                        ` : ''}
-                    `;
-                            layer.bindPopup(popupContent);
+                    try {
+                        const bounds = plotLayer.getBounds();
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds);
                         }
-                    }).addTo(tphLayer);
-
-                    map.addLayer(tphLayer);
+                    } catch (error) {
+                        console.warn('Plot bounds not available, checking for TPH layer bounds');
+                        if (tphLayer && tphLayer.getLayers().length > 0) {
+                            try {
+                                const tphBounds = tphLayer.getBounds();
+                                if (tphBounds.isValid()) {
+                                    map.fitBounds(tphBounds);
+                                }
+                            } catch (error) {
+                                console.warn('Neither plot nor TPH bounds available');
+                            }
+                        }
+                    }
+                } else {
+                    // Tambahkan alert untuk memberitahu user
+                    alert('Plot map tidak tersedia untuk area ini. Hanya menampilkan titik TPH jika tersedia.');
+                    console.warn('No plot data available, checking for TPH layer bounds');
+                    if (tphLayer && tphLayer.getLayers().length > 0) {
+                        try {
+                            const tphBounds = tphLayer.getBounds();
+                            if (tphBounds.isValid()) {
+                                map.fitBounds(tphBounds);
+                            }
+                        } catch (error) {
+                            console.warn('TPH bounds not available');
+                        }
+                    }
                 }
             }
 
@@ -612,6 +643,7 @@
                             updatePlotLayer(afdelingId),
                             updateTPHMarkers(estateSelect.value, afdelingId),
                             updateLegendInfo(estateSelect.value, afdelingId)
+
                         ]);
                     } catch (error) {
                         console.error('Error updating data:', error);
@@ -631,6 +663,7 @@
                             updatePlotLayer(afdelingSelect.value, selectedBlokNama),
                             updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama),
                             updateLegendInfo(estateSelect.value, afdelingSelect.value, selectedBlokNama)
+
                         ]);
                     } catch (error) {
                         console.error('Error updating data:', error);
