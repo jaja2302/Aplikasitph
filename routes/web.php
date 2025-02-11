@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\DashboardAjaxController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Auth\AuthPenggunaController;
+use App\Http\Controllers\Maps\GisBlokController;
 // Guest routes (only accessible when not logged in)
 Route::middleware('guest:pengguna')->group(function () {
     Route::get('/login', [AuthPenggunaController::class, 'showLoginForm'])->name('login');
@@ -28,6 +29,13 @@ Route::middleware('auth:pengguna')->group(function () {
     Route::post('/dashboard/update-tph/{id}', [DashboardAjaxController::class, 'updateTPH'])->name('dashboard.update-tph');
     Route::delete('/dashboard/delete-tph/{id}', [DashboardAjaxController::class, 'deleteTPH'])->name('dashboard.delete-tph');
     Route::get('/dashboard/legend-info/{estateId}/{afdelingId}', [DashboardAjaxController::class, 'getLegendInfo'])->name('dashboard.legend-info');
+
+
+
+    Route::get('/maps/gisblok', [GisBlokController::class, 'index'])->name('maps-management');
+    Route::get('/maps/getafdeling', [GisBlokController::class, 'getAfdeling'])->name('gis.getAfdeling');
+    Route::get('/maps/plotsblok', [GisBlokController::class, 'getPlots'])->name('gis.getPlotsblok');
+    Route::post('/maps/save-plotsblok', [GisBlokController::class, 'savePlots'])->name('gis.savePlotsblok');
 });
 
 // Redirect root to login or dashboard based on auth status

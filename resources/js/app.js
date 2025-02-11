@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import 'leaflet.markercluster';
-
+import jQuery from 'jquery';
+import 'leaflet-editable';
 // Import CSS
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -23,6 +24,7 @@ L.Icon.Default.mergeOptions({
 
 // Make Leaflet available globally
 window.L = L;
+window.$ = jQuery;
 
 // Global loader functions
 window.showLoader = function() {

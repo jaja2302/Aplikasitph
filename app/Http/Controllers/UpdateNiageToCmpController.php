@@ -27,7 +27,7 @@ class UpdateNiageToCmpController extends Controller
 
                     // Batch update untuk setiap chunk
                     if (!empty($updates)) {
-                        DB::connection('mysql5')->table('tph')
+                        DB::connection('mysql2')->table('tph')
                             ->upsert(
                                 $updates,
                                 ['id'], // Primary key untuk identifikasi record
