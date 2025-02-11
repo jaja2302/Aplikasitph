@@ -68,23 +68,23 @@ if (!function_exists('check_previlege_cmp')) {
         return false;
     }
 }
-if (!function_exists('is_dep_da')) {
-    function is_dep_da()
-    {
-        $pengguna = Pengguna::with(['Jabatan', 'Departement'])
-            ->where('user_id', auth()->id())
-            ->first();
+// if (!function_exists('is_dep_da')) {
+//     function is_dep_da()
+//     {
+//         $pengguna = Pengguna::with(['Jabatan', 'Departement'])
+//             ->where('user_id', auth()->id())
+//             ->first();
 
-        if (!$pengguna || !$pengguna->Departement) {
-            return false;
-        }
+//         if (!$pengguna || !$pengguna->Departement) {
+//             return false;
+//         }
 
-        // Ensure Departement is a collection or object
-        if (is_a($pengguna->Departement, 'Illuminate\Database\Eloquent\Collection')) {
-            return $pengguna->Departement->contains('nama', 'Digital Architect');
-        }
+//         // Ensure Departement is a collection or object
+//         if (is_a($pengguna->Departement, 'Illuminate\Database\Eloquent\Collection')) {
+//             return $pengguna->Departement->contains('nama', 'Digital Architect');
+//         }
 
-        // If Departement is a single object
-        return $pengguna->Departement->nama === 'Digital Architect';
-    }
-}
+//         // If Departement is a single object
+//         return $pengguna->Departement->nama === 'Digital Architect';
+//     }
+// }

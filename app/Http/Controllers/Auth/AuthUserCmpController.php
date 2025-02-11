@@ -24,6 +24,8 @@ class AuthUserCmpController extends Controller
 
     public function login(Request $request)
     {
+        // dd('aw');
+
         $request->validate([
             'email' => 'required',
             'password' => 'required',

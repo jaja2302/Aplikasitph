@@ -62,37 +62,40 @@
                             Dashboard
                         </a>
                     </div>
-                    @if(is_dep_da())
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="{{ route('maps-management') }}"
-                            class="{{ request()->routeIs('maps-management') ? 'border-green-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            Maps Management
-                        </a>
-                    </div>
-                    @endif
-                </div>
 
-                <!-- User Menu -->
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 relative ml-5">
-                        <div class="flex items-center">
-                            <div class="mr-3 text-right">
-                                <p class="text-sm font-medium text-gray-700">{{ Auth::user()->nama_lengkap }}</p>
-                                <p class="text-xs text-gray-500">{{ Auth::user()->Jabatan->nama ?? '-' }}</p>
-                            </div>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                    <svg class="mr-2 -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                                    </svg>
-                                    Logout
-                                </button>
-                            </form>
+
+                    {{-- @if(is_dep_da())
+    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+        <a href="{{ route('maps-management') }}"
+                    class="{{ request()->routeIs('maps-management') ? 'border-green-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                    Maps Management
+                    </a>
+                </div>
+                @endif --}}
+
+            </div>
+
+            <!-- User Menu -->
+            <div class="flex items-center">
+                <div class="flex-shrink-0 relative ml-5">
+                    <div class="flex items-center">
+                        <div class="mr-3 text-right">
+                            <p class="text-sm font-medium text-gray-700">{{ Auth::user()->nama_lengkap }}</p>
+                            <p class="text-xs text-gray-500">{{ Auth::user()->Jabatan->nama ?? '-' }}</p>
                         </div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                <svg class="mr-2 -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </nav>
     @endauth
