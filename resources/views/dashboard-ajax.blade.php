@@ -1,4 +1,21 @@
 <x-layouts.app>
+    <style>
+        @keyframes fade-in-down {
+            0% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-down {
+            animation: fade-in-down 0.3s ease-out;
+        }
+    </style>
     <div class="space-y-6">
         <!-- Page Header -->
         <div class="bg-white shadow-sm rounded-lg p-6">
@@ -439,6 +456,7 @@
                 }
 
                 const data = await fetchData(url);
+                let hasValidBounds = false;
 
                 if (data && Array.isArray(data.features) && data.features.length > 0) {
                     tphLayer = L.featureGroup();
@@ -475,7 +493,22 @@
                     }).addTo(tphLayer);
 
                     map.addLayer(tphLayer);
+
+                    // Set bounds based on TPH layer if available
+                    if (tphLayer.getLayers().length > 0) {
+                        try {
+                            const bounds = tphLayer.getBounds();
+                            if (bounds.isValid()) {
+                                map.fitBounds(bounds);
+                                hasValidBounds = true;
+                            }
+                        } catch (error) {
+                            console.warn('TPH bounds not available:', error);
+                        }
+                    }
                 }
+
+                return hasValidBounds;
             }
 
             async function updatePlotLayer(afdelingId, selectedBlokNama = null) {
@@ -561,39 +594,19 @@
                         }
                     }).addTo(map);
 
+                    // Try to fit bounds to plot layer
                     try {
                         const bounds = plotLayer.getBounds();
                         if (bounds.isValid()) {
                             map.fitBounds(bounds);
+                            return true; // Successfully set bounds
                         }
                     } catch (error) {
-                        console.warn('Plot bounds not available, checking for TPH layer bounds');
-                        if (tphLayer && tphLayer.getLayers().length > 0) {
-                            try {
-                                const tphBounds = tphLayer.getBounds();
-                                if (tphBounds.isValid()) {
-                                    map.fitBounds(tphBounds);
-                                }
-                            } catch (error) {
-                                console.warn('Neither plot nor TPH bounds available');
-                            }
-                        }
-                    }
-                } else {
-                    // Tambahkan alert untuk memberitahu user
-                    alert('Plot map tidak tersedia untuk area ini. Hanya menampilkan titik TPH jika tersedia.');
-                    console.warn('No plot data available, checking for TPH layer bounds');
-                    if (tphLayer && tphLayer.getLayers().length > 0) {
-                        try {
-                            const tphBounds = tphLayer.getBounds();
-                            if (tphBounds.isValid()) {
-                                map.fitBounds(tphBounds);
-                            }
-                        } catch (error) {
-                            console.warn('TPH bounds not available');
-                        }
+                        console.warn('Plot bounds not available:', error);
                     }
                 }
+
+                return false; // Failed to set plot bounds
             }
 
             // Event listeners for selects
@@ -638,15 +651,27 @@
                 if (afdelingId) {
                     showLoader();
                     try {
-                        await Promise.all([
-                            populateBlok(afdelingId),
-                            updatePlotLayer(afdelingId),
-                            updateTPHMarkers(estateSelect.value, afdelingId),
-                            updateLegendInfo(estateSelect.value, afdelingId)
+                        await populateBlok(afdelingId);
 
-                        ]);
+                        // First try to update and set bounds with plot layer
+                        const plotBoundsSet = await updatePlotLayer(afdelingId);
+
+                        if (!plotBoundsSet) {
+                            showNotification('Plot tidak tersedia. Menampilkan titik TPH jika tersedia.');
+                            // Try to update and set bounds with TPH markers
+                            const tphBoundsSet = await updateTPHMarkers(estateSelect.value, afdelingId);
+                            if (!tphBoundsSet) {
+                                showNotification('Tidak ada data TPH yang tersedia.');
+                            }
+                        } else {
+                            // Still update TPH markers but don't use their bounds
+                            await updateTPHMarkers(estateSelect.value, afdelingId);
+                        }
+
+                        await updateLegendInfo(estateSelect.value, afdelingId);
                     } catch (error) {
                         console.error('Error updating data:', error);
+                        showNotification('Terjadi kesalahan saat memuat data.');
                     } finally {
                         hideLoader();
                     }
@@ -659,14 +684,26 @@
                     showLoader();
                     try {
                         const selectedBlokNama = this.options[this.selectedIndex].text;
-                        await Promise.all([
-                            updatePlotLayer(afdelingSelect.value, selectedBlokNama),
-                            updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama),
-                            updateLegendInfo(estateSelect.value, afdelingSelect.value, selectedBlokNama)
 
-                        ]);
+                        // First try to update and set bounds with plot layer
+                        const plotBoundsSet = await updatePlotLayer(afdelingSelect.value, selectedBlokNama);
+
+                        if (!plotBoundsSet) {
+                            showNotification('Plot tidak tersedia. Menampilkan titik TPH jika tersedia.');
+                            // Try to update and set bounds with TPH markers
+                            const tphBoundsSet = await updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama);
+                            if (!tphBoundsSet) {
+                                showNotification('Tidak ada data TPH yang tersedia.');
+                            }
+                        } else {
+                            // Still update TPH markers but don't use their bounds
+                            await updateTPHMarkers(estateSelect.value, afdelingSelect.value, selectedBlokNama);
+                        }
+
+                        await updateLegendInfo(estateSelect.value, afdelingSelect.value, selectedBlokNama);
                     } catch (error) {
                         console.error('Error updating data:', error);
+                        showNotification('Terjadi kesalahan saat memuat data.');
                     } finally {
                         hideLoader();
                     }
@@ -844,6 +881,28 @@
                     map.fitBounds(plotLayer.getBounds());
                 }
             });
+
+            // Add this function for showing alerts
+            function showNotification(message) {
+                // You can customize this notification style
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 animate-fade-in-down';
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <svg class="w-6 h-6 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span class="text-gray-700">${message}</span>
+                    </div>
+                `;
+
+                document.body.appendChild(notification);
+
+                // Remove notification after 5 seconds
+                setTimeout(() => {
+                    notification.remove();
+                }, 5000);
+            }
         });
     </script>
 

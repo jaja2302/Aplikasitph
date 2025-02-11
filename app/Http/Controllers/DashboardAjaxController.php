@@ -49,9 +49,11 @@ class DashboardAjaxController extends Controller
     {
         // dd($estateId);
         $afdeling = Afdeling::where('dept', $estateId)
-            ->where('status', '=', '1')
+            // ->where('status', '=', '1')
             // ->where('id_ppro', '!=', '0')
             ->get();
+
+        // dd($afdeling, $estateId);
         return response()->json($afdeling);
     }
 
