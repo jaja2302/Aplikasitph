@@ -7,6 +7,8 @@ use App\Http\Controllers\DashboardAjaxController;
 // use App\Http\Controllers\Auth\AuthPenggunaController;
 use App\Http\Controllers\Maps\GisBlokController;
 // Guest routes (only accessible when not logged in)
+use App\Http\Controllers\FetchController;
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthUserCmpController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthUserCmpController::class, 'login'])->name('login.submit');
@@ -35,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/maps/getafdeling', [GisBlokController::class, 'getAfdeling'])->name('gis.getAfdeling');
     Route::get('/maps/plotsblok', [GisBlokController::class, 'getPlots'])->name('gis.getPlotsblok');
     Route::post('/maps/save-plotsblok', [GisBlokController::class, 'savePlots'])->name('gis.savePlotsblok');
+
+    Route::get('/fetch-data', [FetchController::class, 'fetchNiagaData'])->name('fetch-data');
 });
 
 // Redirect root to login or dashboard based on auth status

@@ -156,6 +156,13 @@ class TphMobileApiController extends Controller
 
             if (!empty($successfullyProcessed)) {
                 DB::commit();
+                // Set 'id' field to be the same as 'id_tph' for successfully processed records
+                $successfullyProcessed = array_map(function ($item) {
+                    if (isset($item['id_tph'])) {
+                        $item['id'] = $item['id_tph']; // Set 'id' to the value of 'id_tph'
+                    }
+                    return $item;
+                }, $successfullyProcessed);
             } else {
                 DB::rollBack();
             }

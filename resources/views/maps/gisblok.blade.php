@@ -1,29 +1,45 @@
 <x-layouts.app>
+    <!-- Update the buttons and result div section -->
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-2xl font-bold mb-4">GIS Blok</h1>
 
-        <div>
-            <select name="estate" id="estate">
+        <div class="mb-4">
+            <select name="estate" id="estate" class="select select-bordered w-full max-w-xs mr-2">
                 <option value="">Pilih Estate</option>
                 @foreach ($list_est as $estate)
                 <option value="{{ $estate['id'] }}">{{ $estate['nama'] }}</option>
                 @endforeach
             </select>
 
-            <select name="afd" id="afd">
-                <option value="">Pilih Estate</option>
+            <select name="afd" id="afd" class="select select-bordered w-full max-w-xs mr-2">
+                <option value="">Pilih Afdeling</option>
             </select>
-
-            <button class="btn btn-primary" id="button">Show</button>
-            <button class="btn btn-primary" id="downloadButton">Download GeoJSON</button>
         </div>
 
-    </div>
+        <!-- # Bagian HTML -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button class="btn btn-primary" id="button">
+                Show Map
+            </button>
+            <button class="btn btn-info" id="buttonCheck">
+                Check Latest Update
+            </button>
+            <button class="btn btn-warning" id="buttonFetch">
+                Fetch & Sync Data
+            </button>
+            <button class="btn btn-secondary" id="buttonTriggerZip">
+                Generate ZIP Data
+            </button>
+        </div>
 
-    <div class="bg-white shadow-md rounded-lg p-6">
-        <div id="map" style="height: 600px; width: 100%;"></div>
-    </div>
+        <!-- Result Container -->
+        <div id="fetchDataRes" class="mb-4"></div>
 
+        <!-- Map Container -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <div id="map" style="height: 600px; width: 100%;"></div>
+        </div>
+    </div>
 
     <script type="module">
         var map = L.map('map', {
@@ -304,6 +320,184 @@
                     }
                 });
             }
+        });
+
+
+        // Fungsi untuk menampilkan loading state
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.prop('disabled', true);
+                button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+            } else {
+                button.prop('disabled', false);
+                button.html(button.data('original-text'));
+            }
+        }
+
+        // Simpan text asli button saat dokumen ready
+        $(document).ready(function() {
+            $('#buttonCheck, #buttonDownload, #buttonFetch').each(function() {
+                $(this).data('original-text', $(this).html());
+            });
+        });
+
+        // Check Latest Update Handler
+        $('#buttonCheck').click(function() {
+            const button = $(this);
+            const resultDiv = $('#fetchDataRes');
+
+            setButtonLoading(button, true);
+
+            $.ajax({
+                url: "https://tph.srs-ssms.com/api/sync/tph/checkLastupdate",
+                method: 'GET',
+                success: function(result) {
+                    console.log(result);
+
+                    if (result.status === 200) {
+                        resultDiv.html(`
+                       <div class="alert alert-info mt-3">
+                            <strong>Last Update:</strong> ${result.last_update}
+                        </div>
+                    `);
+                    } else {
+                        resultDiv.html(`
+                <div class="alert alert-warning mt-3">
+                    <strong>No data found</strong>
+                </div>
+            `);
+                    }
+                },
+
+                error: function(xhr, status, error) {
+                    console.error('AJAX request failed:', status, error);
+                    resultDiv.html(`
+                <div class="alert alert-danger mt-3">
+                    <strong>Error!</strong> Failed to check update
+                </div>
+            `);
+                },
+                complete: function() {
+                    setButtonLoading(button, false);
+                }
+            });
+        });
+
+
+
+        // Fetch & Sync Data Handler
+        $('#buttonFetch').click(function() {
+            const button = $(this);
+            const resultDiv = $('#fetchDataRes');
+
+            setButtonLoading(button, true);
+
+            $.ajax({
+                url: "{{ route('fetch-data') }}",
+                method: 'GET',
+                success: function(result) {
+                    if (result.status === 200) {
+                        const progressHtml = `
+                    <div class="mb-2">
+                        <strong>Processed:</strong> ${result.processed_rows} / ${result.total_rows} records
+                    </div>
+                `;
+
+                        resultDiv.html(`
+                    <div class="alert alert-success mt-3">
+                        <strong>Success!</strong> ${result.message}<br>
+                        ${progressHtml}
+                        <div class="text-sm mt-2">
+                            ${result.zip_info ? `<strong>ZIP File:</strong> ${result.zip_info.file_name}<br>
+                            <strong>Last Modified:</strong> ${result.zip_info.last_modified}` : ''}
+                        </div>
+                    </div>
+                `);
+                    } else {
+                        resultDiv.html(`
+                    <div class="alert alert-warning mt-3">
+                        <strong>Warning!</strong> ${result.message}
+                    </div>
+                `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX request failed:', status, error);
+                    let errorMessage = 'Failed to sync data';
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    resultDiv.html(`
+                <div class="alert alert-danger mt-3">
+                    <strong>Error!</strong> ${errorMessage}
+                </div>
+            `);
+                },
+                complete: function() {
+                    setButtonLoading(button, false);
+                }
+            });
+        });
+
+        // Tambahkan ke JavaScript yang ada
+
+        // Generate ZIP Data Handler
+        $('#buttonTriggerZip').click(function() {
+            const button = $(this);
+            const resultDiv = $('#fetchDataRes');
+
+            setButtonLoading(button, true);
+
+            $.ajax({
+                url: "https://tph.srs-ssms.com/api/sync/download",
+                method: 'GET',
+                success: function(result) {
+                    if (result.status === 200) {
+                        resultDiv.html(`
+                    <div class="alert alert-success mt-3">
+                        <strong>Success!</strong> ${result.message}<br>
+                        Total Records: ${result.total_rows}<br>
+                        <div class="text-sm mt-2">
+                            ZIP generation has started. You can check the progress and download 
+                            the file when it's ready using the "Download Data" button.
+                        </div>
+                    </div>
+                `);
+                    } else {
+                        resultDiv.html(`
+                    <div class="alert alert-warning mt-3">
+                        <strong>Warning!</strong> ${result.message}
+                    </div>
+                `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX request failed:', status, error);
+                    let errorMessage = 'Failed to start ZIP generation';
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    resultDiv.html(`
+                <div class="alert alert-danger mt-3">
+                    <strong>Error!</strong> ${errorMessage}
+                </div>
+            `);
+                },
+                complete: function() {
+                    setButtonLoading(button, false);
+                }
+            });
+        });
+
+        // Add to document ready
+        $(document).ready(function() {
+            $('#buttonCheck, #buttonFetch, #buttonTriggerZip').each(function() {
+                $(this).data('original-text', $(this).html());
+            });
         });
     </script>
 
