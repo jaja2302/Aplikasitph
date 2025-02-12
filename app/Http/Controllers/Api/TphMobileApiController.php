@@ -16,10 +16,8 @@ class TphMobileApiController extends Controller
     public function storeDataTPHKoordinat(Request $request)
     {
         try {
-            // Decode the Base64 data
             $decodedData = base64_decode($request->input('data'));
             if ($decodedData === false) {
-
                 return response()->json([
                     'statusCode' => false,
                     'message' => 'Invalid Base64 data',
@@ -27,10 +25,8 @@ class TphMobileApiController extends Controller
                 ], 400);
             }
 
-            // Decompress the GZIP data
             $unzippedData = gzdecode($decodedData);
             if ($unzippedData === false) {
-
                 return response()->json([
                     'statusCode' => false,
                     'message' => 'Invalid GZIP data',
@@ -38,10 +34,8 @@ class TphMobileApiController extends Controller
                 ], 400);
             }
 
-            // Convert JSON string to an array
             $dataList = json_decode($unzippedData, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-
                 return response()->json([
                     'statusCode' => false,
                     'message' => 'Invalid JSON data',
@@ -49,71 +43,110 @@ class TphMobileApiController extends Controller
                 ], 400);
             }
 
-
-
-            // Initialize arrays for tracking
             $successfullyProcessed = [];
             $failedToProcess = [];
 
-            // Begin transaction
             DB::beginTransaction();
 
             foreach ($dataList as $data) {
-                // Validate data
-                $validator = Validator::make($data, [
-                    'dept' => 'required|max:255',
-                    'divisi' => 'required|max:255',
-                    'blok' => 'required|max:255',
-                    'tahun' => 'required|max:255',
-                    'nomor' => 'required|max:255',
-                    'lat' => 'required|numeric',
-                    'lon' => 'required|numeric',
-                    'user_input' => 'required|max:255',
-                    'app_version' => 'nullable|max:255',
-                ]);
-
-                if ($validator->fails()) {
-                    $error = $validator->errors()->first();
-                    $failedToProcess[] = [
-                        'data' => $data,
-                        'error' => $error
-                    ];
-
-                    continue;
-                }
-
                 try {
-                    // Search for an existing record
-                    $existingRecord = KoordinatatTph::where([
-                        'id' => (int) $data['id_tph'],
-                        'dept' => $data['dept'],
-                        'divisi' => $data['divisi'],
-                        'blok' => $data['blok'],
-                        'tahun' => $data['tahun'],
-                        'nomor' => $data['nomor'],
-                    ])->first();
+                    if (is_string($data['app_version'])) {
+                        $data['app_version'] = json_decode($data['app_version'], true);
+                    }
 
-                    if ($existingRecord) {
+                    $validator = Validator::make($data, [
+                        'dept' => 'required',
+                        'divisi' => 'required',
+                        'blok' => 'required',
+                        'tahun' => 'required',
+                        'nomor' => 'required',
+                        'lat' => 'required|numeric',
+                        'lon' => 'required|numeric',
+                        'user_input' => 'required',
+                        'app_version' => 'required|array',
+                        'app_version.app_version' => 'required|string',
+                        'app_version.os_version' => 'required|string',
+                        'app_version.device_model' => 'required|string',
+                    ]);
 
-                        // Update the existing record
-                        $existingRecord->update([
-                            'lat' => $data['lat'],
-                            'lon' => $data['lon'],
-                            'user_input' => $data['user_input'],
-                            'app_version' => $data['app_version'],
-                            'update_date' => Carbon::now()->format('Y-m-d H:i:s')
+                    if ($validator->fails()) {
+                        \Log::error('Validation failed for TPH data', [
+                            'data' => $data,
+                            'errors' => $validator->errors()->all()
                         ]);
-                        $successfullyProcessed[] = $existingRecord->toArray();
-                    } else {
+                        $failedToProcess[] = [
+                            'data' => $data,
+                            'error' => $validator->errors()->first()
+                        ];
+                        continue;
+                    }
 
-                        // Log missing record and continue
+                    $exists = DB::connection('mysql3')
+                        ->select(
+                            "SELECT id FROM tph WHERE 
+                            id = ? AND 
+                            dept = ? AND 
+                            divisi = ? AND 
+                            blok = ? AND 
+                            tahun = ? AND 
+                            nomor = ?",
+                            [
+                                (int) $data['id_tph'],
+                                $data['dept'],
+                                $data['divisi'],
+                                $data['blok'],
+                                $data['tahun'],
+                                $data['nomor']
+                            ]
+                        );
+
+                    if (!empty($exists)) {
+                        $updated = DB::connection('mysql3')
+                            ->update(
+                                "UPDATE tph SET 
+                                lat = ?,
+                                lon = ?,
+                                user_input = ?,
+                                app_version = ?,
+                                update_date = ?,
+                                status = 1
+                                WHERE id = ?",
+                                [
+                                    $data['lat'],
+                                    $data['lon'],
+                                    $data['user_input'],
+                                    json_encode($data['app_version']),
+                                    Carbon::now()->format('Y-m-d H:i:s'),
+                                    (int) $data['id_tph']
+                                ]
+                            );
+
+                        if ($updated) {
+                            $successfullyProcessed[] = $data;
+                        } else {
+                            \Log::error('Failed to update TPH record', [
+                                'id' => $data['id_tph']
+                            ]);
+                            $failedToProcess[] = [
+                                'data' => $data,
+                                'error' => 'Failed to update record'
+                            ];
+                        }
+                    } else {
+                        \Log::warning('TPH record not found', [
+                            'search_criteria' => $data
+                        ]);
                         $failedToProcess[] = [
                             'data' => $data,
                             'error' => 'Data not found'
                         ];
                     }
                 } catch (\Exception $e) {
-                    // Log update errors
+                    \Log::error('Error processing TPH record', [
+                        'data' => $data,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
                     $failedToProcess[] = [
                         'data' => $data,
                         'error' => $e->getMessage()
@@ -121,14 +154,12 @@ class TphMobileApiController extends Controller
                 }
             }
 
-            // Commit or rollback transaction based on success
             if (!empty($successfullyProcessed)) {
                 DB::commit();
             } else {
                 DB::rollBack();
             }
 
-            // Final response
             return response()->json([
                 'statusCode' => 1,
                 'message' => sprintf(
@@ -143,7 +174,10 @@ class TphMobileApiController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            // Handle unexpected errors
+            \Log::error('Fatal error in storeDataTPHKoordinat', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             DB::rollBack();
 
             return response()->json([

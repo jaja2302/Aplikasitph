@@ -14,4 +14,11 @@ class KoordinatatTph extends Model
     protected $primaryKey = 'id';
     protected $guarded = ['id'];
     public $timestamps = false;
+
+    // // Hanya perlu menambahkan casts untuk handling tipe data
+    // protected $casts = [
+    //     'app_version' => 'array',
+    //     'lat' => 'float',
+    //     'lon' => 'float'
+    // ];
 }
