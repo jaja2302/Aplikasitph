@@ -11,7 +11,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use ZipArchive;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Response;
+use Illuminate\Http\Request;
 
 class UpdateNiagaToCmpController extends Controller
 {
@@ -147,5 +148,18 @@ class UpdateNiagaToCmpController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+
+    public function exportDataJson(Request $request)
+    {
+        $date = $request->input('date', date('Y-m-d'));
+        $data = KoordinatatTph::whereDate('update_date', $date)->get();
+
+        if ($data->isEmpty()) {
+            return response()->json(['message' => 'No data found for this date'], 404);
+        }
+
+        return response()->json($data);
     }
 }

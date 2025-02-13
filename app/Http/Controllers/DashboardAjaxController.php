@@ -22,7 +22,10 @@ class DashboardAjaxController extends Controller
     public function index()
     {
         $user = check_previlege_cmp();
-        return view('dashboard-ajax', compact('user'));
+        // dd($user);
+        return view('dashboard-ajax', [
+            'canedit' => $user
+        ]);
     }
 
     public function getRegional()
@@ -49,7 +52,7 @@ class DashboardAjaxController extends Controller
     {
         // dd($estateId);
         $afdeling = Afdeling::where('dept', $estateId)
-            // ->where('status', '=', '1')
+            ->where('status', '=', '1')
             // ->where('id_ppro', '!=', '0')
             ->get();
 

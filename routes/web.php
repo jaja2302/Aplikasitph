@@ -31,8 +31,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/dashboard/delete-tph/{id}', [DashboardAjaxController::class, 'deleteTPH'])->name('dashboard.delete-tph');
     Route::get('/dashboard/legend-info/{estateId}/{afdelingId}', [DashboardAjaxController::class, 'getLegendInfo'])->name('dashboard.legend-info');
 
-
-
     Route::get('/maps/gisblok', [GisBlokController::class, 'index'])->name('maps-management');
     Route::get('/maps/getafdeling', [GisBlokController::class, 'getAfdeling'])->name('gis.getAfdeling');
     Route::get('/maps/plotsblok', [GisBlokController::class, 'getPlots'])->name('gis.getPlotsblok');

@@ -56,4 +56,7 @@ Route::middleware(['check.apikey'])->group(function () {
         Route::get('/tph/latest-zip', [UpdateNiagaToCmpController::class, 'getLatestZip']);
         Route::get('/tph/checkLastupdate', [UpdateNiagaToCmpController::class, 'checkLastUpdate']);
     });
+
+
+    Route::get('/exportdatajson', [UpdateNiagaToCmpController::class, 'exportDataJson']);
 });

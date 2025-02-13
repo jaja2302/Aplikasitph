@@ -223,56 +223,11 @@
         </div>
     </div>
 
-    <!-- Edit TPH Modal -->
-    <div id="editModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative p-5 mx-auto w-96 my-20">
-            <!-- Modal content -->
-            <div class="relative bg-white rounded-lg shadow-lg">
-                <!-- Header -->
-                <div class="flex items-start justify-between p-4 border-b rounded-t">
-                    <h3 class="text-xl font-semibold text-gray-900">
-                        Edit TPH
-                    </h3>
-                    <button type="button" class="close-modal text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                </div>
-                <!-- Body -->
-                <div class="p-6 space-y-6">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Nomor TPH
-                            </label>
-                            <input type="number" id="tphNumber" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">
-                                Nomor Ancak
-                            </label>
-                            <input type="number" id="ancakNumber" class="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500" />
-                        </div>
-                    </div>
-                </div>
-                <!-- Footer -->
-                <div class="flex items-center justify-end p-6 space-x-2 border-t border-gray-200 rounded-b">
-                    <button type="button" class="delete-tph bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">
-                        Hapus
-                    </button>
-                    <button type="button" class="close-modal bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600">
-                        Batal
-                    </button>
-                    <button type="button" class="save-changes bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                        Simpan
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <script type="module">
+        let canedit = @json($canedit);
+        // console.log(canedit); // Cek di console browser apakah nilai muncul
         // Move focusOnTPH outside the DOMContentLoaded event listener
         window.focusOnTPH = function(blok, tphNumber) {
             const estateSelect = document.getElementById('estate');
@@ -312,6 +267,33 @@
                     }
                 });
         };
+        // Pastikan fungsi ini berada di luar blok dan dalam global scope
+        window.hapusTPH = function(id, tphNumber) {
+            if (confirm(`Apakah Anda yakin ingin menghapus TPH ${tphNumber} ini?`)) {
+                fetch(`{{ route('dashboard.delete-tph', ['id' => ':id']) }}`.replace(':id', id), {
+                        method: 'DELETE', // Ubah dari POST ke DELETE
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    })
+                    .catch(error => {
+                        alert("Terjadi kesalahan: " + error);
+                        console.error("Error deleting TPH:", error);
+                    });
+            }
+        };
+
 
         document.addEventListener('DOMContentLoaded', function() {
             // Map initialization
@@ -458,6 +440,7 @@
                 const data = await fetchData(url);
                 let hasValidBounds = false;
 
+
                 if (data && Array.isArray(data.features) && data.features.length > 0) {
                     tphLayer = L.featureGroup();
 
@@ -475,19 +458,20 @@
                         },
                         onEachFeature: function(feature, layer) {
                             const popupContent = `
-                        <strong>TPH Info</strong><br>
-                        Blok: ${feature.properties.blok}<br>
-                        TPH: ${feature.properties.tph}<br>
-                        Estate: ${feature.properties.estate}<br>
-                        Afdeling: ${feature.properties.afdeling}<br>
-                        User Input: ${feature.properties.user_input}<br>
-                        ${window.userHasPrivileges ? `
-                            <button onclick="editTPH(${feature.properties.id})"
-                                class="bg-green-600 text-white px-3 py-1 rounded mt-2 text-sm hover:bg-green-700">
-                                Edit TPH
-                            </button>
-                        ` : ''}
-                    `;
+                            <strong>TPH Info</strong><br>
+                            Blok: ${feature.properties.blok}<br>
+                            TPH: ${feature.properties.tph}<br>
+                            Estate: ${feature.properties.estate}<br>
+                            Afdeling: ${feature.properties.afdeling}<br>
+                            User Input: ${feature.properties.user_input}<br>
+                            ${canedit ? `
+                                <button onclick="hapusTPH(${feature.properties.id}, ${feature.properties.tph})"
+                                    class="bg-red-600 text-white px-3 py-1 rounded mt-2 text-sm hover:bg-red-700">
+                                    Hapus TPH
+                                </button>
+                            ` : ''}
+                        `;
+
                             layer.bindPopup(popupContent);
                         }
                     }).addTo(tphLayer);
@@ -506,6 +490,7 @@
                             console.warn('TPH bounds not available:', error);
                         }
                     }
+
                 }
 
                 return hasValidBounds;
@@ -706,79 +691,6 @@
                         showNotification('Terjadi kesalahan saat memuat data.');
                     } finally {
                         hideLoader();
-                    }
-                }
-            });
-
-            // Modal handling
-            let currentTphId = null;
-            const editModal = document.getElementById('editModal');
-            const closeButtons = document.querySelectorAll('.close-modal');
-            const saveButton = document.querySelector('.save-changes');
-            const deleteButton = document.querySelector('.delete-tph');
-
-            window.editTPH = function(id) {
-                currentTphId = id;
-                editModal.classList.remove('hidden');
-                // You might want to fetch current TPH data here and populate the form
-            };
-
-            closeButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    editModal.classList.add('hidden');
-                });
-            });
-
-            saveButton.addEventListener('click', async () => {
-                const tphNumber = document.getElementById('tphNumber').value;
-                const ancakNumber = document.getElementById('ancakNumber').value;
-
-                try {
-                    const response = await fetch(`{{ route('dashboard.update-tph', ['id' => ':id']) }}`.replace(':id', currentTphId), {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify({
-                            tphNumber,
-                            ancakNumber
-                        })
-                    });
-
-                    if (response.ok) {
-                        editModal.classList.add('hidden');
-                        // Refresh TPH markers
-                        await updateTPHMarkers(estateSelect.value, afdelingSelect.value);
-                    } else {
-                        alert('Failed to update TPH');
-                    }
-                } catch (error) {
-                    console.error('Error updating TPH:', error);
-                    alert('Error updating TPH');
-                }
-            });
-
-            deleteButton.addEventListener('click', async () => {
-                if (confirm('Are you sure you want to delete this TPH?')) {
-                    try {
-                        const response = await fetch(`{{ route('dashboard.delete-tph', ['id' => ':id']) }}`.replace(':id', currentTphId), {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            }
-                        });
-
-                        if (response.ok) {
-                            editModal.classList.add('hidden');
-                            // Refresh TPH markers
-                            await updateTPHMarkers(estateSelect.value, afdelingSelect.value);
-                        } else {
-                            alert('Failed to delete TPH');
-                        }
-                    } catch (error) {
-                        console.error('Error deleting TPH:', error);
-                        alert('Error deleting TPH');
                     }
                 }
             });

@@ -239,7 +239,11 @@ class TPHService
             throw new \Exception('TPH not found');
         }
 
-        return $tph->update(['status' => 0]);
+        return $tph->update([
+            'status' => 0,
+            'lat' => '',
+            'lon' => '',
+        ]);
     }
 
     public function getRegionals()

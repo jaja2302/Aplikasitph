@@ -6,37 +6,38 @@ use App\Models\Pengguna;
 use App\Models\SysUser;
 use Illuminate\Support\Facades\Auth;
 
-if (!function_exists('check_previlege')) {
-    function check_previlege($user_id)
-    {
-        $pengguna = Pengguna::with('Jabatan', 'Departement')
-            ->where('user_id', $user_id)
-            ->first();
+// if (!function_exists('check_previlege')) {
+//     function check_previlege($user_id)
+//     {
+//         $pengguna = Pengguna::with('Jabatan', 'Departement')
+//             ->where('user_id', $user_id)
+//             ->first();
 
-        if (!$pengguna || !$pengguna->Jabatan) {
-            return false;
-        }
+//         if (!$pengguna || !$pengguna->Jabatan) {
+//             return false;
+//         }
 
-        // Debugging output
-        // dd($pengguna->Departement);
+//         // Debugging output
+//         // dd($pengguna->Departement);
 
-        if ($pengguna->Departement->isEmpty()) {
-            return false;
-        }
+//         if ($pengguna->Departement->isEmpty()) {
+//             return false;
+//         }
 
 
-        // 1 = srs 
-        $departementFamily = array_unique(GetDepartementFamily(1));
+//         // 1 = srs 
+//         $departementFamily = array_unique(GetDepartementFamily(1));
 
-        // dd($departementFamily);
-        if (in_array($pengguna->Departement[0]->id, $departementFamily)) {
-            if ($pengguna->Jabatan->id_level >= 4) {
-                return true;
-            }
-        }
-        return false;
-    }
-}
+//         // dd($departementFamily);
+//         if (in_array($pengguna->Departement[0]->id, $departementFamily)) {
+//             if ($pengguna->Jabatan->id_level >= 4) {
+//                 return true;
+//             }
+//         }
+//         return false;
+//     }
+// }
+
 if (!function_exists('GetDepartementFamily')) {
     function GetDepartementFamily($parentId)
     {
@@ -62,7 +63,9 @@ if (!function_exists('check_previlege_cmp')) {
     function check_previlege_cmp()
     {
         $user_jabatan = Auth::user()->jabatan;
-        if ($user_jabatan == 'Asisten') {
+
+        // dd($user_jabatan, Auth::user());
+        if ($user_jabatan === 'IT') {
             return true;
         }
         return false;
