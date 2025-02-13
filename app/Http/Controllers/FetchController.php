@@ -124,7 +124,7 @@ class FetchController extends Controller
     {
         $processedCount = 0;
 
-        DB::connection('mysql3')->beginTransaction(); // Start transaction
+        DB::connection('mysql2')->beginTransaction(); // Start transaction
 
         try {
             foreach (array_chunk($data, $this->batchSize) as $batch) {
@@ -136,13 +136,13 @@ class FetchController extends Controller
                     $batchData[] = array_merge(['id' => $id], $item);
                 }
 
-                DB::connection('mysql3')->table('tph')->upsert($batchData, ['id']);
+                DB::connection('mysql2')->table('tph')->upsert($batchData, ['id']);
                 $processedCount += count($batchData);
             }
 
-            DB::connection('mysql3')->commit(); // Commit kalau berhasil
+            DB::connection('mysql2')->commit(); // Commit kalau berhasil
         } catch (\Exception $e) {
-            DB::connection('mysql3')->rollBack(); // Rollback kalau error
+            DB::connection('mysql2')->rollBack(); // Rollback kalau error
             throw $e;
         }
 

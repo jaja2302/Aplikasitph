@@ -81,27 +81,15 @@ class TphMobileApiController extends Controller
                         continue;
                     }
 
-                    $exists = DB::connection('mysql3')
+                    $exists = DB::connection('mysql2')
                         ->select(
-                            "SELECT id FROM tph WHERE 
-                            id = ? AND 
-                            dept = ? AND 
-                            divisi = ? AND 
-                            blok = ? AND 
-                            tahun = ? AND 
-                            nomor = ?",
-                            [
-                                (int) $data['id_tph'],
-                                $data['dept'],
-                                $data['divisi'],
-                                $data['blok'],
-                                $data['tahun'],
-                                $data['nomor']
-                            ]
+                            "SELECT id FROM tph WHERE id = ?",
+                            [(int) $data['id_tph']]
                         );
 
+
                     if (!empty($exists)) {
-                        $updated = DB::connection('mysql3')
+                        $updated = DB::connection('mysql2')
                             ->update(
                                 "UPDATE tph SET 
                                 lat = ?,
@@ -158,8 +146,10 @@ class TphMobileApiController extends Controller
                 DB::commit();
                 // Set 'id' field to be the same as 'id_tph' for successfully processed records
                 $successfullyProcessed = array_map(function ($item) {
-                    if (isset($item['id_tph'])) {
-                        $item['id'] = $item['id_tph']; // Set 'id' to the value of 'id_tph'
+                    if (isset($item['id_tph']) && isset($item['dept']) && isset($item['regional'])) {
+                        $item['id'] = $item['id_tph'];
+                        $item['dept'] = intval($item['dept']);
+                        $item['regional'] = intval($item['regional']);
                     }
                     return $item;
                 }, $successfullyProcessed);
