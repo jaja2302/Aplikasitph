@@ -48,6 +48,9 @@ Route::middleware(['check.apikey'])->group(function () {
         Route::get('/DatasetKemandoranDetailJson', 'downloadDatasetKemandoranDetailJson');
     });
 
+
+
+
     // untuk database 
     Route::prefix('sync')->group(function () {
         Route::get('/niaga-check', [UpdateNiagaToCmpController::class, 'checkLastUpdate']);

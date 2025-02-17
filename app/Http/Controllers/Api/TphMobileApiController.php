@@ -60,8 +60,8 @@ class TphMobileApiController extends Controller
                         'blok' => 'required',
                         'tahun' => 'required',
                         'nomor' => 'required',
-                        'lat' => 'required|numeric',
-                        'lon' => 'required|numeric',
+                        // 'lat' => 'required|numeric',
+                        // 'lon' => 'required|numeric',
                         'user_input' => 'required',
                         'app_version' => 'required|array',
                         'app_version.app_version' => 'required|string',
@@ -183,6 +183,8 @@ class TphMobileApiController extends Controller
             // \Log::info('successfullyProcessedd', [
             // '$successfullyProcessed' => $successfullyProcessed
             // ]);
+
+
             return response()->json([
                 'statusCode' => 1,
                 'message' => sprintf(

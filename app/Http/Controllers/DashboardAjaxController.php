@@ -28,43 +28,6 @@ class DashboardAjaxController extends Controller
         ]);
     }
 
-    public function getRegional()
-    {
-        $regional = Regional::all();
-        return response()->json($regional);
-    }
-
-    public function getWilayah($regionalId)
-    {
-        $wilayah = Wilayah::where('regional', $regionalId)->get();
-        return response()->json($wilayah);
-    }
-
-    public function getEstate($wilayahId)
-    {
-        $estate = Estate::where('wilayah', $wilayahId)
-            ->where('status', '=', '1')
-            ->get();
-        return response()->json($estate);
-    }
-
-    public function getAfdeling($estateId)
-    {
-        // dd($estateId);
-        $afdeling = Afdeling::where('dept', $estateId)
-            ->where('status', '=', '1')
-            // ->where('id_ppro', '!=', '0')
-            ->get();
-
-        // dd($afdeling, $estateId);
-        return response()->json($afdeling);
-    }
-
-    public function getBlok($afdelingId)
-    {
-        $blok = Blok::where('divisi', $afdelingId)->get();
-        return response()->json($blok);
-    }
 
     public function getPlotMap($afdelingId, Request $request)
     {

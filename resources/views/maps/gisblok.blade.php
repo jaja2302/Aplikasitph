@@ -21,13 +21,13 @@
             <button class="btn btn-primary" id="button">
                 Show Map
             </button>
-            <button class="btn btn-info" id="buttonCheck">
+            <button class="btn btn-info" id="buttonCheck" disabled>
                 Check Latest Update
             </button>
-            <button class="btn btn-warning" id="buttonFetch">
+            <button class="btn btn-warning" id="buttonFetch" disabled>
                 Fetch & Sync Data
             </button>
-            <button class="btn btn-secondary" id="buttonTriggerZip">
+            <button class="btn btn-secondary" id="buttonTriggerZip" disabled>
                 Generate ZIP Data
             </button>
         </div>

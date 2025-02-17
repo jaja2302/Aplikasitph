@@ -23,6 +23,12 @@ class FetchController extends Controller
 
     public function fetchNiagaData()
     {
+        return response()->json([
+            'status' => 500,
+            'message' => 'Sync failed',
+            'error' => "disabled by ADMIN"
+        ], 500);
+
         // dd('test');
         try {
             DB::beginTransaction();
@@ -122,6 +128,11 @@ class FetchController extends Controller
 
     protected function processBatchUpdate(array $data)
     {
+        return response()->json([
+            'status' => 500,
+            'message' => 'Sync failed',
+            'error' => "disabled by ADMIN"
+        ], 500);
         $processedCount = 0;
 
         DB::connection('mysql2')->beginTransaction(); // Start transaction

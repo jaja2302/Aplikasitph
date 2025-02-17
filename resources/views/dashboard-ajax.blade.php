@@ -385,15 +385,15 @@
 
             notification.className = `fixed top-4 right-4 ${bgColor} border rounded-lg shadow-lg p-4 z-50 animate-fade-in-down`;
             notification.innerHTML = `
-        <div class="flex items-center">
-            <svg class="w-5 h-5 ${textColor} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                ${type === 'success' 
-                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
-                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
-            </svg>
-            <span class="${textColor} font-medium">${message}</span>
-        </div>
-    `;
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 ${textColor} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        ${type === 'success' 
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
+                            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+                    </svg>
+                    <span class="${textColor} font-medium">${message}</span>
+                </div>
+            `;
 
             document.body.appendChild(notification);
 
@@ -472,21 +472,10 @@
                 document.getElementById('mapLoader').classList.add('hidden');
             }
 
-            // Fetch data functions
-            async function fetchData(url) {
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return await response.json();
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                    return [];
-                }
-            }
 
             // Populate select functions
             async function populateRegional() {
-                const data = await fetchData("{{ route('dashboard.regional') }}");
+                const data = await fetchData("{{ route('locations.regional') }}");
                 regionalSelect.innerHTML = '<option value="">Pilih Regional</option>';
                 data.forEach(item => {
                     regionalSelect.innerHTML += `<option value="${item.id}">${item.nama}</option>`;
@@ -494,7 +483,7 @@
             }
 
             async function populateWilayah(regionalId) {
-                const data = await fetchData(`{{ route('dashboard.wilayah', ['regionalId' => ':regionalId']) }}`.replace(':regionalId', regionalId));
+                const data = await fetchData(`{{ route('locations.wilayah', ['regionalId' => ':regionalId']) }}`.replace(':regionalId', regionalId));
                 wilayahSelect.innerHTML = '<option value="">Pilih Wilayah</option>';
                 data.forEach(item => {
                     wilayahSelect.innerHTML += `<option value="${item.id}">${item.nama}</option>`;
@@ -503,7 +492,7 @@
             }
 
             async function populateEstate(wilayahId) {
-                const data = await fetchData(`{{ route('dashboard.estate', ['wilayahId' => ':wilayahId']) }}`.replace(':wilayahId', wilayahId));
+                const data = await fetchData(`{{ route('locations.estate', ['wilayahId' => ':wilayahId']) }}`.replace(':wilayahId', wilayahId));
                 estateSelect.innerHTML = '<option value="">Pilih Estate</option>';
                 data.forEach(item => {
                     estateSelect.innerHTML += `<option value="${item.id}">${item.nama}</option>`;
@@ -512,7 +501,7 @@
             }
 
             async function populateAfdeling(estateId) {
-                const data = await fetchData(`{{ route('dashboard.afdeling', ['estateId' => ':estateId']) }}`.replace(':estateId', estateId));
+                const data = await fetchData(`{{ route('locations.afdeling', ['estateId' => ':estateId']) }}`.replace(':estateId', estateId));
                 afdelingSelect.innerHTML = '<option value="">Pilih Afdeling</option>';
                 data.forEach(item => {
                     afdelingSelect.innerHTML += `<option value="${item.id}">${item.abbr}</option>`;
@@ -521,7 +510,7 @@
             }
 
             async function populateBlok(afdelingId) {
-                const data = await fetchData(`{{ route('dashboard.blok', ['afdelingId' => ':afdelingId']) }}`.replace(':afdelingId', afdelingId));
+                const data = await fetchData(`{{ route('locations.blok', ['afdelingId' => ':afdelingId']) }}`.replace(':afdelingId', afdelingId));
                 blokSelect.innerHTML = '<option value="">Pilih Blok</option>';
                 data.forEach(item => {
                     blokSelect.innerHTML += `<option value="${item.id}">${item.nama}</option>`;
@@ -902,27 +891,7 @@
                 }
             });
 
-            // Add this function for showing alerts
-            function showNotification(message) {
-                // You can customize this notification style
-                const notification = document.createElement('div');
-                notification.className = 'fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 animate-fade-in-down';
-                notification.innerHTML = `
-                    <div class="flex items-center">
-                        <svg class="w-6 h-6 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                        <span class="text-gray-700">${message}</span>
-                    </div>
-                `;
 
-                document.body.appendChild(notification);
-
-                // Remove notification after 5 seconds
-                setTimeout(() => {
-                    notification.remove();
-                }, 5000);
-            }
         });
     </script>
 

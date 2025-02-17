@@ -27,6 +27,14 @@ class GisBlokController extends Controller
 
     public function getAfdeling(Request $request)
     {
+        if (!check_previlege_cmp()) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Sync failed',
+                'error' => "disabled by ADMIN"
+            ], 500);
+        }
+
         $estate = $request->input('estate');
 
         // dd($estate);
@@ -45,6 +53,14 @@ class GisBlokController extends Controller
 
     public function getPlots(Request $request)
     {
+
+        if (!check_previlege_cmp()) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Sync failed',
+                'error' => "disabled by ADMIN"
+            ], 500);
+        }
         try {
             $estate = $request->input('estate');
             $afdeling = $request->input('afdeling');
@@ -97,6 +113,14 @@ class GisBlokController extends Controller
 
     public function savePlots(Request $request)
     {
+
+        if (!check_previlege_cmp()) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Sync failed',
+                'error' => "disabled by ADMIN"
+            ], 500);
+        }
         try {
             $request->validate([
                 'nama' => 'required|string',
