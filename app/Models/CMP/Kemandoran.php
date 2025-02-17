@@ -1,21 +1,20 @@
 <?php
 
-namespace App\Models\TPH;
+namespace App\Models\CMP;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Blok extends Model
+class Kemandoran extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_sixth';
+    protected $connection = 'mysql2';
 
-    protected $table = 'blok';
-    protected $primaryKey = 'Id';
-
+    protected $table = 'kemandoran';
+    protected $primaryKey = 'id';
+    public $timestamps = false;
     protected $fillable = [
-        'regional',
         'company',
         'company_ppro',
         'company_abbr',
@@ -28,25 +27,16 @@ class Blok extends Model
         'divisi_ppro',
         'divisi_abbr',
         'divisi_nama',
-        'nama',
         'kode',
-        'kode_pmmp',
-        'ancak',
-        'jumlah_tph',
-        'luas_area',
-        'tahun',
-        'jumlah_pokok',
-        'pkok_per_hektar',
-        'is_mature',
+        'nama',
+        'type',
         'create_by',
         'create_nama',
         'create_date',
         'update_by',
-        'update_name',
+        'update_nama',
         'update_date',
         'history',
-        'status'
+        'status',
     ];
-
-    public $timestamps = false;
 }

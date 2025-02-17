@@ -13,6 +13,8 @@ use ZipArchive;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Http\Request;
+use App\Models\VersioningDB;
+use Illuminate\Support\Facades\Validator;
 
 class UpdateNiagaToCmpController extends Controller
 {
@@ -161,5 +163,35 @@ class UpdateNiagaToCmpController extends Controller
         }
 
         return response()->json($data);
+    }
+
+    public function VersioningDB(Request $request)
+    {
+        // Validasi input
+        $validator = Validator::make($request->all(), [
+            'table_name' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'statusCode' => 0,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $tableName = $request->input('table_name');
+        $currentDateTime = now()->toDateTimeString();
+
+        // Update atau insert dengan Eloquent
+        VersioningDB::updateOrCreate(
+            ['table_name' => $tableName],
+            ['date_modified' => $currentDateTime]
+        );
+
+        return response()->json([
+            'statusCode' => 1,
+            'message' => 'Versioning updated successfully.',
+        ]);
     }
 }

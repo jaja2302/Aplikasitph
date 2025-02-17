@@ -14,7 +14,7 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware(['check.apikey'])->group(function () {
     Route::post('/send-report', [EmailController::class, 'sendReport'])->name('send-report-api');
-    Route::get('/test', [EmailController::class, 'sendReport'])->name('test-api');
+    // Route::get('/test', [EmailController::class, 'sendReport'])->name('test-api');
     // Route::get('/update-naija-to-cmp', [UpdateNiagaToCmpController::class, 'updateNiageToCmp'])->name('update-naija-to-cmp-api');
 
     // Tambahkan route TPH Mobile di sini jika ada
@@ -48,7 +48,7 @@ Route::middleware(['check.apikey'])->group(function () {
         Route::get('/DatasetKemandoranDetailJson', 'downloadDatasetKemandoranDetailJson');
     });
 
-
+    // untuk database 
     Route::prefix('sync')->group(function () {
         Route::get('/niaga-check', [UpdateNiagaToCmpController::class, 'checkLastUpdate']);
         Route::get('/niaga-fetch', [UpdateNiagaToCmpController::class, 'fetchNiagaData']);
@@ -59,4 +59,6 @@ Route::middleware(['check.apikey'])->group(function () {
 
 
     Route::get('/exportdatajson', [UpdateNiagaToCmpController::class, 'exportDataJson']);
+    Route::post('/VersioningDB', [UpdateNiagaToCmpController::class, 'VersioningDB']);
 });
+// Route::get('/test', [EmailController::class, 'sendReport'])->name('test-api');

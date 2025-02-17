@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use App\Models\KoordinatatTph;
-use Illuminate\Support\Facades\Response;
 
 class TphMobileApiController extends Controller
 {
@@ -90,9 +89,32 @@ class TphMobileApiController extends Controller
 
 
                     if (!empty($exists)) {
-                        $updated = DB::connection('mysql2')
-                            ->update(
-                                "UPDATE tph SET 
+                        $isLatLonInvalid = !isset($data['lat'], $data['lon']) ||
+                            in_array($data['lat'], ['', '-', null], true) ||
+                            in_array($data['lon'], ['', '-', null], true);
+
+                        if ($isLatLonInvalid) {
+                            // Update tanpa mengubah lat & lon
+                            $updated = DB::connection('mysql2')
+                                ->update(
+                                    "UPDATE tph SET 
+                                user_input = ?,
+                                app_version = ?,
+                                update_date = ?,
+                                status = 1
+                                WHERE id = ?",
+                                    [
+                                        $data['user_input'],
+                                        json_encode($data['app_version']),
+                                        Carbon::now()->format('Y-m-d H:i:s'),
+                                        (int) $data['id_tph']
+                                    ]
+                                );
+                        } else {
+                            // Update termasuk lat & lon jika valid
+                            $updated = DB::connection('mysql2')
+                                ->update(
+                                    "UPDATE tph SET 
                                 lat = ?,
                                 lon = ?,
                                 user_input = ?,
@@ -100,15 +122,16 @@ class TphMobileApiController extends Controller
                                 update_date = ?,
                                 status = 1
                                 WHERE id = ?",
-                                [
-                                    $data['lat'],
-                                    $data['lon'],
-                                    $data['user_input'],
-                                    json_encode($data['app_version']),
-                                    Carbon::now()->format('Y-m-d H:i:s'),
-                                    (int) $data['id_tph']
-                                ]
-                            );
+                                    [
+                                        $data['lat'],
+                                        $data['lon'],
+                                        $data['user_input'],
+                                        json_encode($data['app_version']),
+                                        Carbon::now()->format('Y-m-d H:i:s'),
+                                        (int) $data['id_tph']
+                                    ]
+                                );
+                        }
 
                         if ($updated) {
                             $successfullyProcessed[] = $data;
@@ -157,7 +180,9 @@ class TphMobileApiController extends Controller
             } else {
                 DB::rollBack();
             }
-
+            // \Log::info('successfullyProcessedd', [
+            // '$successfullyProcessed' => $successfullyProcessed
+            // ]);
             return response()->json([
                 'statusCode' => 1,
                 'message' => sprintf(

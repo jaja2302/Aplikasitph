@@ -268,10 +268,11 @@
                 });
         };
         // Pastikan fungsi ini berada di luar blok dan dalam global scope
+        // Modified hapusTPH function for dynamic marker removal
         window.hapusTPH = function(id, tphNumber) {
             if (confirm(`Apakah Anda yakin ingin menghapus TPH ${tphNumber} ini?`)) {
                 fetch(`{{ route('dashboard.delete-tph', ['id' => ':id']) }}`.replace(':id', id), {
-                        method: 'DELETE', // Ubah dari POST ke DELETE
+                        method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -284,16 +285,123 @@
                         return response.json();
                     })
                     .then(data => {
-                        alert(data.message);
-                        location.reload();
+                        // Find and remove the marker from the map
+                        const map = window.leafletMap;
+                        const tphLayer = map._layers[Object.keys(map._layers).find(key =>
+                            map._layers[key].feature &&
+                            map._layers[key].feature.properties &&
+                            map._layers[key].feature.properties.id === id
+                        )];
+
+                        if (tphLayer) {
+                            // Remove the marker from the map
+                            map.removeLayer(tphLayer);
+
+                            // Close any open popup
+                            map.closePopup();
+
+                            // Update statistics in the legend
+                            updateStatisticsAfterDeletion(tphNumber);
+                        }
+
+                        // Show success message
+                        showNotification(data.message || 'TPH berhasil dihapus');
                     })
                     .catch(error => {
-                        alert("Terjadi kesalahan: " + error);
                         console.error("Error deleting TPH:", error);
+                        showNotification("Terjadi kesalahan: " + error.message);
                     });
             }
         };
 
+        // Function to update statistics after TPH deletion
+        function updateStatisticsAfterDeletion(tphNumber) {
+            // Update total TPH count
+            const totalTPHElement = document.getElementById('totalTPH');
+            const currentTotal = parseInt(totalTPHElement.textContent);
+            totalTPHElement.textContent = Math.max(0, currentTotal - 1);
+
+            // Update verified/unverified TPH counts
+            const verifiedTPHElement = document.getElementById('verifiedTPH');
+            const unverifiedTPHElement = document.getElementById('unverifiedTPH');
+            const currentVerified = parseInt(verifiedTPHElement.textContent);
+            const currentUnverified = parseInt(unverifiedTPHElement.textContent);
+
+            // Cari button TPH dengan cara yang benar
+            // Mencari semua button di blok verified dan unverified
+            const verifiedButtons = document.querySelectorAll('#blokTerinput button');
+            const unverifiedButtons = document.querySelectorAll('#blokBelumTerinput .px-1\\.5');
+
+            // Cek apakah TPH ada di verified atau unverified
+            const wasVerified = Array.from(verifiedButtons).some(button => button.textContent.trim() === tphNumber.toString());
+
+            // Update counter yang sesuai
+            if (wasVerified) {
+                verifiedTPHElement.textContent = Math.max(0, currentVerified - 1);
+            } else {
+                unverifiedTPHElement.textContent = Math.max(0, currentUnverified - 1);
+            }
+
+            // Update progress percentage
+            const newTotal = Math.max(0, currentTotal - 1);
+            const newVerified = wasVerified ? Math.max(0, currentVerified - 1) : currentVerified;
+            const progressPercentage = newTotal > 0 ? Math.round((newVerified / newTotal) * 100) : 0;
+
+            document.getElementById('progressPercentage').textContent = `${progressPercentage}%`;
+            document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+
+            // Update TPH number di legend
+            // Cari button TPH yang sesuai
+            const tphButtons = document.querySelectorAll('button, span.px-1\\.5');
+            let tphElement = null;
+
+            for (const element of tphButtons) {
+                if (element.textContent.trim() === tphNumber.toString()) {
+                    tphElement = element;
+                    break;
+                }
+            }
+
+            if (tphElement) {
+                const tphContainer = tphElement.closest('.flex.flex-col.gap-1');
+                if (tphContainer) {
+                    // Jika ini TPH terakhir di container, hapus seluruh container
+                    const remainingTPHs = tphContainer.querySelectorAll('button, span.px-1\\.5').length;
+                    if (remainingTPHs <= 1) {
+                        tphContainer.remove();
+                    } else {
+                        // Jika bukan terakhir, hapus hanya button/span TPH nya saja
+                        tphElement.remove();
+                    }
+                }
+            }
+        }
+
+        // Enhanced notification function with better styling
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+            const textColor = type === 'success' ? 'text-green-800' : 'text-red-800';
+
+            notification.className = `fixed top-4 right-4 ${bgColor} border rounded-lg shadow-lg p-4 z-50 animate-fade-in-down`;
+            notification.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-5 h-5 ${textColor} mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success' 
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'}
+            </svg>
+            <span class="${textColor} font-medium">${message}</span>
+        </div>
+    `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'transition-opacity');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Map initialization

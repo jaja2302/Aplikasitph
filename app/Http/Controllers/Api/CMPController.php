@@ -3,35 +3,46 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Regional;
-use App\Models\TPH\BUnitCode;
-use App\Models\TPH\CompanyCode;
-use App\Models\TPH\DivisionCode;
-use App\Models\TPH\FieldCode;
-use App\Models\TPH\TPH;
+use App\Models\Afdeling;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
+use App\Models\BUnitCode;
+use App\Models\CompanyCode;
+use App\Models\DivisionCode;
+use App\Models\FieldCode;
+use App\Models\TPH;
 use Illuminate\Support\Facades\Storage;
-use App\Models\TPH\TPHNew;
-use App\Models\TPH\Dept;
-use App\Models\TPH\Divisi;
-use App\Models\TPH\Blok;
-use App\Models\TPH\Company;
+use App\Models\CMP\StagingWorker;
+use App\Models\CMP\StagingWorkerGroup;
+use App\Models\CMP\StagingWorkerInGroup;
+use App\Models\Regional;
+// use App\Models\Dept;
+// use App\Models\Divisi;
+use App\Models\Blok;
 use Illuminate\Support\Facades\Log;  // Import Log facade
-use App\Models\TPH\Wilayah;
+use App\Models\Wilayah;
 use Illuminate\Support\Facades\Validator;
-use App\Models\TPH\VersioningDB;
+use App\Models\VersioningDB;
 use App\Models\CMP\Karyawan;
 use App\Models\CMP\Kemandoran;
 use App\Models\CMP\KemandoranDetail;
+use App\Models\Estate;
+use App\Models\KoordinatatTph;
+use Illuminate\Support\Facades\Http;
 
 class CMPController extends Controller
 {
+
+
     public function convertDatasetToJson($modelClass, $columns, $fileName, $dataKey, $query = null)
     {
         try {
             // Retrieve the table name dynamically from the model class
             $tableName = (new $modelClass)->getTable(); // Get table name from model
+
+            // If $query is null, initialize it with a query builder instance
+            if (!$query) {
+                $query = $modelClass::query();
+            }
 
             // Initialize an empty array to store the mapped data
             $allData = [];
@@ -46,8 +57,6 @@ class CMPController extends Controller
                 });
                 $allData = array_merge($allData, $chunkData->toArray());
             });
-
-
 
             $currentDateTime = now()->toDateTimeString();
 
@@ -66,22 +75,29 @@ class CMPController extends Controller
             // Gzip compress the data
             $compressedData = gzencode($jsonData);
 
-            // Save the compressed data to a .gz file
-            Storage::put($fileName . '.zip', $compressedData);
+            // Save the compressed data to a .zip file
+            Storage::disk('local')->put($fileName . '.zip', $compressedData);
+            // Pastikan API menerima request dengan format benar
+            $apiResponse = Http::timeout(30)->post('https://tph.srs-ssms.com/api/VersioningDB', [
+                'table_name' => $tableName
+            ]);
 
-            VersioningDB::updateOrCreate(
-                ['table_name' => $tableName],
-                ['date_modified' => $currentDateTime]
-            );
+            // Cek apakah request berhasil
+            if ($apiResponse->failed()) {
+                return response()->json([
+                    'statusCode' => 0,
+                    'message' => 'Failed to update VersioningDB API',
+                    'error' => $apiResponse->body(),
+                ], $apiResponse->status());
+            }
 
-            // Return the download link for the file
+
             return response()->json([
                 'statusCode' => 1,
-                'message' => 'Dataset saved as a minified JSON gzip file successfully.',
+                'message' => 'Dataset saved as a minified JSON zip file successfully.',
                 'download_link' => url('storage/' . $fileName . '.zip'),
             ]);
         } catch (\Exception $e) {
-            // Return error JSON response
             return response()->json([
                 'statusCode' => 0,
                 'message' => 'An error occurred while saving the dataset.',
@@ -91,7 +107,105 @@ class CMPController extends Controller
     }
 
 
+    public function convertDatasetCompanyToJson()
+    {
+        $columns = [
+            "1" => "CompanyCode",
+            "2" => "CompanyName",
+        ];
+        return $this->convertDatasetToJson(CompanyCode::class, $columns, 'datasetCompanyCode', 'CompanyCodeDB');
+    }
 
+    public function convertDatasetBUnitCodeToJson()
+    {
+        $columns = [
+            "1" => "BUnitCode",
+            "2" => "BUnitName",
+            "3" => "CompanyCode",
+        ];
+        return $this->convertDatasetToJson(BUnitCode::class, $columns, 'datasetBUnitCode', 'BUnitCodeDB');
+    }
+
+    public function convertDatasetDivisionCodeToJson()
+    {
+        $columns = [
+            "1" => "DivisionCode",
+            "2" => "DivisionName",
+            "3" => "BUnitCode",
+        ];
+        return $this->convertDatasetToJson(DivisionCode::class, $columns, 'datasetDivisionCode', 'DivisionCodeDB');
+    }
+
+    public function convertDatasetFieldCodeToJson()
+    {
+        $columns = [
+            "1" => "FieldCode",
+            "2" => "BUnitCode",
+            "3" => "DivisionCode",
+            "4" => "FieldName",
+            "5" => "FieldNumber",
+            "6" => "FieldLandArea",
+            "7" => "PlantingYear",
+            "8" => "InitialNoOfPlants",
+            "9" => "PlantsPerHectare",
+            "10" => "IsMatured",
+        ];
+        return $this->convertDatasetToJson(FieldCode::class, $columns, 'datasetFieldCode', 'FieldCodeDB');
+    }
+
+    public function convertDatasetTPHCodeToJson()
+    {
+        $columns = [
+            "1" => "id",
+            "2" => "CompanyCode",
+            "3" => "Regional",
+            "4" => "BUnitCode",
+            "5" => "DivisionCode",
+            "6" => "FieldCode",
+            "7" => "planting_year",
+            "8" => "ancak",
+            "9" => "tph",
+        ];
+        return $this->convertDatasetToJson(TPH::class, $columns, 'datasetTPHCode', 'TPHDB');
+    }
+
+
+
+    public function convertDatasetWorkerInGroupToJson()
+    {
+        $columns = [
+            "1" => "worker_group_code",
+            "2" => "worker_code",
+            "3" => "estate_code",
+        ];
+        return $this->convertDatasetToJson(StagingWorkerInGroup::class, $columns, 'datasetWorkerInGroup', 'WorkerInGroupDB');
+    }
+
+    public function convertDatasetWorkerGroupToJson()
+    {
+        $columns = [
+            "1" => "worker_group_code",
+            "2" => "code",
+            "3" => "name",
+            "4" => "estate_code",
+            "5" => "group_type",
+            "6" => "company_code",
+            "7" => "estate_code",
+        ];
+        return $this->convertDatasetToJson(StagingWorkerGroup::class, $columns, 'datasetWorkerGroup', 'WorkerGroupDB');
+    }
+
+    public function convertDatasetWorkerToJson()
+    {
+        $columns = [
+            "1" => "worker_code",
+            "2" => "code",
+            "3" => "name",
+            "4" => "company_code",
+            "5" => "estate_code",
+        ];
+        return $this->convertDatasetToJson(StagingWorker::class, $columns, 'datasetWorker', 'WorkerDB');
+    }
 
 
     public function convertDatasetRegionalToJson()
@@ -127,8 +241,9 @@ class CMPController extends Controller
             "6" => "abbr",
             "7" => "nama",
         ];
-        return $this->convertDatasetToJson(Dept::class, $columns, 'datasetDept', 'DeptDB');
+        return $this->convertDatasetToJson(Estate::class, $columns, 'datasetDept', 'DeptDB');
     }
+
 
 
     public function convertDatasetDivisiToJson(Request $request)
@@ -147,11 +262,11 @@ class CMPController extends Controller
         $est = $request->input('est');
 
         // If 'est' is provided, filter the query; otherwise, fetch all data
-        $query = Divisi::query();
+        $query = Afdeling::query();
         if ($est) {
             // Convert 'est' to uppercase and find the matching department
             $abbr = strtoupper($est);
-            $dept = Dept::where('abbr', $abbr)->first();
+            $dept = Estate::where('abbr', $abbr)->first();
 
             // If no department is found, return an error response
             if (!$dept) {
@@ -170,7 +285,7 @@ class CMPController extends Controller
             $fileName = 'datasetDivisi';
         }
 
-        return $this->convertDatasetToJson(Divisi::class, $columns, $fileName, 'DivisiDB', $query);
+        return $this->convertDatasetToJson(Afdeling::class, $columns, $fileName, 'DivisiDB', $query);
     }
 
     public function convertDatasetBlokToJson(Request $request)
@@ -197,7 +312,7 @@ class CMPController extends Controller
 
         if ($est) {
             $abbr = strtoupper($est);
-            $dept = Dept::where('abbr', $abbr)->first();
+            $dept = Estate::where('abbr', $abbr)->first();
             if (!$dept) {
                 return response()->json([
                     'statusCode' => 0,
@@ -240,11 +355,11 @@ class CMPController extends Controller
         $est = $request->input('est');
 
         // Use query builder instead of all()
-        $query = TPHNew::query();
+        $query = KoordinatatTph::query();
 
         if ($est) {
             $abbr = strtoupper($est);
-            $dept = Dept::where('abbr', $abbr)->first();
+            $dept = Estate::where('abbr', $abbr)->first();
 
             if (!$dept) {
                 return response()->json([
@@ -261,7 +376,7 @@ class CMPController extends Controller
             $fileName = 'datasetTPH';
         }
 
-        return $this->convertDatasetToJson(TPHNew::class, $columns, $fileName, 'TPHDB', $query);
+        return $this->convertDatasetToJson(KoordinatatTph::class, $columns, $fileName, 'TPHDB', $query);
     }
 
     public function convertDatasetKaryawanToJson()
@@ -348,8 +463,8 @@ class CMPController extends Controller
     public function downloadDatasetJson($fileName)
     {
         try {
-            // Define the file path in storage
-            $filePath = storage_path('app/' . $fileName);
+            // Define the file path using Storage disk 'local'
+            $filePath = Storage::disk('local')->path($fileName);
 
             // Check if the file exists
             if (!file_exists($filePath)) {
@@ -359,6 +474,7 @@ class CMPController extends Controller
                 ], 404);
             }
 
+            // Return the file for download using response()->download()
             return response()->download($filePath, $fileName, [
                 'Content-Type' => 'application/octet-stream',
                 'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
@@ -467,10 +583,10 @@ class CMPController extends Controller
             $models = [
                 Regional::class,
                 Wilayah::class,
-                Dept::class,
-                Divisi::class,
+                Estate::class,
+                Afdeling::class,
                 Blok::class,
-                TPHNew::class
+                KoordinatatTph::class
             ];
 
             // Get table names from models
@@ -528,7 +644,7 @@ class CMPController extends Controller
             // Encode the compressed data into Base64
             $base64EncodedData = base64_encode($compressedData);
 
-            // Save the Base64 encoded, compressed data to a .txt file (without .json.gz part)
+            // Save the Base64 encoded, compressed data to a .txt file (without .json.zip part)
             $fileName = 'dataset_tph.txt';  // Only use .txt extension
             Storage::put($fileName, $base64EncodedData);
 

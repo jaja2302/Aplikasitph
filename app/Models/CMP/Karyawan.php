@@ -1,23 +1,20 @@
 <?php
 
-namespace App\Models\TPH;
+namespace App\Models\CMP;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TPHNew extends Model
+class Karyawan extends Model
 {
     use HasFactory;
 
-    protected $connection = 'mysql_sixth'; // untuk database lama
-    // protected $connection = 'mysql_eighth'; // untuk database baru
+    protected $connection = 'mysql2';
 
-    protected $table = 'tph';
+    protected $table = 'karyawan';
     protected $primaryKey = 'id';
-
-    // Allow mass assignment for these columns
+    public $timestamps = false;
     protected $fillable = [
-        'regional',
         'company',
         'company_ppro',
         'company_abbr',
@@ -30,17 +27,12 @@ class TPHNew extends Model
         'divisi_ppro',
         'divisi_abbr',
         'divisi_nama',
-        'blok',
-        'blok_kode',
-        'blok_nama',
-        'ancak',
-        'kode_tph',
-        'nomor',
-        'tahun',
-        'lat',
-        'lon',
-        'user_input',
-        'app_version',
+        'nik',
+        'nama',
+        'jabatan',
+        'jenis_kelamin',
+        'tmk',
+        'tgl_resign',
         'create_by',
         'create_nama',
         'create_date',
@@ -50,6 +42,4 @@ class TPHNew extends Model
         'history',
         'status',
     ];
-
-    public $timestamps = false;
 }

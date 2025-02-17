@@ -9,6 +9,7 @@ use App\Models\Blok;
 use App\Models\BlokPlot;
 use App\Models\Regional;
 use App\Models\Wilayah;
+use Illuminate\Support\Facades\DB;
 
 class TPHService
 {
@@ -232,19 +233,28 @@ class TPHService
         ]);
     }
 
+
+
     public function deleteTPH($id)
     {
-        $tph = KoordinatatTph::find($id);
-        if (!$tph) {
+        $affected = DB::connection('mysql3')->table('tph')
+            ->where('id', $id)
+            ->update([
+                'status' => 0,
+                'lat' => '',
+                'lon' => '',
+            ]);
+
+        if ($affected === 0) {
             throw new \Exception('TPH not found');
         }
 
-        return $tph->update([
-            'status' => 0,
-            'lat' => '',
-            'lon' => '',
-        ]);
+        // return response()->json([
+        //     'statusCode' => 1,
+        //     'message' => 'TPH updated successfully.',
+        // ]);
     }
+
 
     public function getRegionals()
     {
